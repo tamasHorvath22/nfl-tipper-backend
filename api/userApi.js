@@ -14,7 +14,12 @@ module.exports = function(app) {
             bcrypt.compare(req.body.password, user.password, function(error, authenticated) {
                 if (error) throw error;
                 if (authenticated) {
-                    jwt.sign({ username: user.username }, config.getJwtPrivateKey(), function(tokenError, token) {
+                    const userObj = {
+                        username: user.username,
+                        userId: user._id,
+                        userEmail: user.email
+                    }
+                    jwt.sign(userObj, config.getJwtPrivateKey(), function(tokenError, token) {
                         if (tokenError) {
                             res.send(responseMessage.USER.TOKEN_CREATE_ERROR);
                             throw tokenError
@@ -32,16 +37,13 @@ module.exports = function(app) {
         let user = User({
             username: req.body.username,
             password: req.body.password,
-            email: req.body.email
+            email: req.body.email,
+            leagues: [],
+            avatarUrl: null
         });
         user.save(function(err) {
             if (err) {
-                if (err.code === 11000) {
-                    res.send(responseMessage.USER.USERNAME_TAKEN);
-                } else {
-                    res.send(responseMessage.USER.UNSUCCESSFUL_REGISTRATION);
-                }
-                console.log(err);
+                res.send(responseMessage.USER.UNSUCCESSFUL_REGISTRATION);
                 throw err;
             };
             res.send(responseMessage.USER.SUCCESSFUL_REGISTRATION);
