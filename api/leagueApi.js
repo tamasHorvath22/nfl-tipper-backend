@@ -6,7 +6,6 @@ module.exports = function(app) {
     const responseMessage = require('../common/constants/api-response-messages');
 
     app.post('/api/league', jsonParser, function (req, res) {
-        console.log(req.decoded);
         let league = League({
             name: req.body.name,
             creator: req.decoded.userId,
