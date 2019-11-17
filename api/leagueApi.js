@@ -20,6 +20,7 @@ module.exports = function(app) {
             ],
             leagueAvatarUrl: req.body.leagueAvatarUrl || null
         });
+        league.players[0].leagueId = league._id;
 
         league.save(function(err) {
             if (err) {
