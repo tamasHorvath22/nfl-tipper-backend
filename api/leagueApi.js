@@ -2,6 +2,7 @@ module.exports = function(app) {
 
     const bodyParser = require('body-parser');
     const League = require('../models/leagueModel');
+    const Player = require('../models/playerModel');
     const jsonParser = bodyParser.json();
     const responseMessage = require('../common/constants/api-response-messages');
 
@@ -9,7 +10,14 @@ module.exports = function(app) {
         let league = League({
             name: req.body.name,
             creator: req.decoded.userId,
-            players: [req.decoded.userId],
+            players: [
+                Player({
+                    username: req.decoded.username,
+                    userId: req.decoded.userId,
+                    leaguePoints: 0,
+                    leagueId: null
+                })
+            ],
             leagueAvatarUrl: req.body.leagueAvatarUrl || null
         });
 
