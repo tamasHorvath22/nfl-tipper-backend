@@ -6,6 +6,12 @@ module.exports = function(app) {
     const jsonParser = bodyParser.json();
     const responseMessage = require('../common/constants/api-response-messages');
 
+    // admin token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwidXNlcklkIjoiNWRkMjgyMTJmMDQ0MTgyNDIwNzBlYjQxIiwidXNlckVtYWlsIjoiYWRtaW5AYWRtaW4uY29tIiwiaWF0IjoxNTc0MDc2OTU3fQ.yo4tSBeUffGDk3q_xKAFWtHrxrg_HAZBnCmNEdoR-ww
+    // admin jelszava
+
+    // player token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InBsYXllciIsInVzZXJJZCI6IjVkZDI4MmZmNmNjNDI5NDMzMDliZDc2NyIsInVzZXJFbWFpbCI6InBsYXllckBwbGF5ZXIuY29tIiwiaWF0IjoxNTc0MDc3MTkxfQ.f_c1HR4Car-mWJxlpETkSdSLHAiL8Cg9311LagHQX-c
+    // player jelszava
+
     app.post('/api/league', jsonParser, function (req, res) {
         let league = League({
             name: req.body.name,
@@ -20,6 +26,8 @@ module.exports = function(app) {
             ],
             leagueAvatarUrl: req.body.leagueAvatarUrl || null
         });
+
+        // set leagueId for creator player
         league.players[0].leagueId = league._id;
 
         league.save(function(err) {
@@ -66,6 +74,13 @@ module.exports = function(app) {
                     res.send(responseMessage.COMMON.NO_CHANGES_MADE);
                 }
             }
+        });
+    });
+
+    app.get('/api/league', jsonParser, function (req, res) {
+        League.findById(req.body.leagueId, function (err, league) {
+            if (err) throw err;
+            res.json(league);
         });
     });
 }
