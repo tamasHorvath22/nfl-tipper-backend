@@ -6,6 +6,13 @@ module.exports = function(app) {
     const jsonParser = bodyParser.json();
     const responseMessage = require('../common/constants/api-response-messages');
 
+    /* 
+        request: 
+        { 
+            leagueId: leagueId,
+            userId: userId 
+        }
+    */
     app.delete('/api/league/player', jsonParser, function (req, res) {
         League.findById(req.body.leagueId, function (err, league) {
             if (err) throw err;
@@ -29,6 +36,12 @@ module.exports = function(app) {
         });
     });
 
+    /* 
+        request: 
+        { 
+            leagueId: leagueId
+        }
+    */
     app.post('/api/league/player', jsonParser, function (req, res) {
         League.findById(req.body.leagueId, function (err, league) {
             if (err) throw err;

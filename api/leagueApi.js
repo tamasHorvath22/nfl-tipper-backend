@@ -12,6 +12,14 @@ module.exports = function(app) {
     // player token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InBsYXllciIsInVzZXJJZCI6IjVkZDI4MmZmNmNjNDI5NDMzMDliZDc2NyIsInVzZXJFbWFpbCI6InBsYXllckBwbGF5ZXIuY29tIiwiaWF0IjoxNTc0MDc3MTkxfQ.f_c1HR4Car-mWJxlpETkSdSLHAiL8Cg9311LagHQX-c
     // player jelszava
 
+
+    /* 
+        request: 
+        { 
+            name: name,
+            leagueAvatarUrl: leagueAvatarUrl
+        }
+    */
     app.post('/api/league', jsonParser, function (req, res) {
         let league = League({
             name: req.body.name,
@@ -39,6 +47,12 @@ module.exports = function(app) {
         });
     });
 
+    /* 
+        request: 
+        { 
+            leagueId: leagueId
+        }
+    */
     app.delete('/api/league', jsonParser, function (req, res) {
         League.findById(req.body.leagueId, function (err, league) {
             if (err) throw err;
@@ -54,6 +68,13 @@ module.exports = function(app) {
         });
     });
 
+    /* 
+        request: 
+        { 
+            leagueId: leagueId,
+            data: {}  --> league fields with data
+        }
+    */
     app.put('/api/league', jsonParser, function (req, res) {
         League.findById(req.body.leagueId, function (err, league) {
             if (err) throw err;
@@ -77,6 +98,12 @@ module.exports = function(app) {
         });
     });
 
+    /* 
+        request: 
+        { 
+            leagueId: leagueId
+        }
+    */
     app.get('/api/league', jsonParser, function (req, res) {
         League.findById(req.body.leagueId, function (err, league) {
             if (err) throw err;

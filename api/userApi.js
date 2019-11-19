@@ -8,6 +8,13 @@ module.exports = function(app) {
     const config = require('../config');
     const responseMessage = require('../common/constants/api-response-messages');
 
+    /* 
+        request: 
+        { 
+            username: username,
+            password: password
+        }
+    */
     app.post('/login', jsonParser, (req, res) => {
         User.findOne({ username: req.body.username }, function(err, user) {
             if (err) throw err;
@@ -33,6 +40,14 @@ module.exports = function(app) {
         });
     });
 
+    /* 
+        request: 
+        { 
+            username: username,
+            password: password,
+            email: email
+        }
+    */
     app.post('/register', jsonParser, function (req, res) {
         let user = User({
             username: req.body.username,
@@ -50,6 +65,13 @@ module.exports = function(app) {
         });
     });
 
+    /* 
+        request: 
+        { 
+            oldPassword: oldPassword,
+            newPassword: newPassword
+        }
+    */
     app.post('/api/change-pass', jsonParser, function (req, res) {
         User.findOne({ username: req.decoded.username }, function(err, user) {
             if (err) {
