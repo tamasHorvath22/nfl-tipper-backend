@@ -31,5 +31,11 @@ module.exports = Object.freeze({
         DELETE_SUCCESS: 'DELETE_SUCCESS',
         UPDATE_SUCCESS: 'UPDATE_SUCCESS',
         UPDATE_FAIL: 'UPDATE_FAIL'
+    },
+    BET: {
+        CREATE_FAIL: 'CREATE_FAIL',
+        CREATE_SUCCESS: 'CREATE_SUCCESS',
+        UPDATE_SUCCESS: 'UPDATE_SUCCESS',
+        UPDATE_FAIL: 'UPDATE_FAIL'
     }
 })
