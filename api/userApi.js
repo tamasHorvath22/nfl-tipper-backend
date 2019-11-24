@@ -93,4 +93,29 @@ module.exports = function(app) {
             })
         });
     });
+
+    /* 
+        request: 
+        { 
+            username: username,
+            email: email
+        }
+    */
+    app.post('/user-check', jsonParser, function (req, res) {
+        console.log(req.body)
+        let occupied = []
+        User.findOne( { username: req.body.username }, function (err, user) {
+            if (err) { throw err }
+            if (user) {
+                occupied.push(responseMessage.USER.USERNAME_TAKEN)
+            }
+            User.findOne( { email: req.body.email }, function (err, user) {
+                if (err) { throw err }
+                if (user) {
+                    occupied.push(responseMessage.USER.EMAIL_TAKEN) 
+                }
+                res.json({ occupied: occupied })
+            })
+        })
+    })
 }
