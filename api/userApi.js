@@ -18,6 +18,10 @@ module.exports = function(app) {
     app.post('/login', jsonParser, (req, res) => {
         User.findOne({ username: req.body.username }, function(err, user) {
             if (err) throw err;
+            if (!user) {
+                res.send(responseMessage.USER.WRONG_USERNAME_OR_PASSWORD);
+                return;
+            }
             bcrypt.compare(req.body.password, user.password, function(error, authenticated) {
                 if (error) throw error;
                 if (authenticated) {
