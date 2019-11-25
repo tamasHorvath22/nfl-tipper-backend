@@ -102,7 +102,6 @@ module.exports = function(app) {
         }
     */
     app.post('/user-check', jsonParser, function (req, res) {
-        console.log(req.body)
         let occupied = []
         User.findOne( { username: req.body.username }, function (err, user) {
             if (err) { throw err }
@@ -116,6 +115,16 @@ module.exports = function(app) {
                 }
                 res.json({ occupied: occupied })
             })
+        })
+    })
+
+    /* 
+        no data needed, user returned from token data
+    */
+    app.post('/api/get-user', jsonParser, function (req, res) {
+        User.findOne({ username: req.decoded.username }, function (err, user) {
+            if (err) { throw err }
+            res.json(user)
         })
     })
 }
