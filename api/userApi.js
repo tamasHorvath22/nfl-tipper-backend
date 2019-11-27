@@ -7,6 +7,13 @@ module.exports = function(app) {
     const jwt = require('jsonwebtoken');
     const config = require('../config');
     const responseMessage = require('../common/constants/api-response-messages');
+    const nodemailer = require("nodemailer");
+    const Mailgun = require('mailgun-js');
+    const fs = require('fs')
+    const emailTemplates = require('../common/constants/email-templates');
+    const MailService = require('../services/email.service');
+    const mailService2 = new MailService(new Mailgun({ apiKey: process.env.EMAIL_API_KEY, domain: process.env.EMAIL_DOMAIN }), emailTemplates);
+    const mailService = new MailService(nodemailer, fs, emailTemplates);
 
     /* 
         request: 
@@ -66,8 +73,28 @@ module.exports = function(app) {
                 throw err;
             };
             res.send(responseMessage.USER.SUCCESSFUL_REGISTRATION);
+            mailService.sendRegistrationEmail(user.email);
         });
     });
+
+    // function sendEmail (email) {
+    //     const mailgun = new Mailgun({ apiKey: process.env.EMAIL_API_KEY, domain: process.env.EMAIL_DOMAIN })
+    //     const data = {
+    //         from: 'no-reply@fl.tipper.com',
+    //         to: email,
+    //         subject: 'Welcome to NFL tipper!',
+    //         html: 'Na, kinek sikerült megoldania az email küldést? :)'
+    //     }
+
+    //     mailgun.messages().send(data, function(err, body) {
+    //         if (err) {
+    //             console.log("got an error: ", err);
+    //         } else {
+    //             console.log('body:');
+    //             console.log(body);
+    //         }
+    //     })
+    // }
 
     /* 
         request: 
