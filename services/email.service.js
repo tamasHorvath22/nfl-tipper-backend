@@ -8,8 +8,12 @@ class MailService {
         this.template = '<div><h3>Welcome to NFL tipper!</h3><div>Dear {{ username }}! We are so glad you registered to NFL tipper! {{ crazy }}</div></div>'
     };
 
-
-    sendRegistrationEmail(toEmail) {
+    /**
+     * 
+     * @param {*} userData 
+     * @param {*} emailData 
+     */
+    sendEmail(userData, emailData) {
         let transporter = this.nodemailer.createTransport({
             host: process.env.AMAZON_SMTP_SERVER,
             port: process.env.AMAZON_SMTP_PORT,
@@ -19,42 +23,44 @@ class MailService {
             }
         });
 
-        const userData = { username: 'Békési Tivadar', crazy: 'Ezaz, működik bakker!!!'} // this object will contain the value which goes to template, it may comes as a parameter
-
         const mailOptions = {
             from: this.mailTemplates.CREDENTIALS.SENDER,
-            to: toEmail,
+            to: userData.email,
             subject: this.mailTemplates.REGISTRATION.SUBJECT,
-            html: this.prepareTemplateToSend(this.makeTempalteOneLiner(this.mailTemplates.BASE_TEMPLATE_PATH + this.mailTemplates.REGISTRATION.TEMPLATE_PATH, userData))
+            html: this.fillVariablesIprepare(this.getTempalteAsOneLiner(this.mailTemplates.GET_REGISTRATION_TEMPLATE_PATH()), userData)
         }
-
+        
         transporter.sendMail(mailOptions, (err, info) => {
-            if(err) throw err
+            if(err) {
+                console.log(err);
+                throw err;
+            }
             console.log("Info: ", info);
         });
     }
 
-    prepareTemplateToSend(template, data) {
+    fillVariablesIprepare(template, data) {
         const keys = Object.keys(data);
         keys.forEach(key => {
-            template = this.changeVariableToData(template, data, key);
+            template = template.replace(key, data[key]);
         })
         template = this.removeBrackets(template)
         return template;
     }
 
-    makeTempalteOneLiner(templatePath) {
-        const rawFile = this.fs.readFileSync('./common/constants/templates/registration-mail-template.html').toString();
-        let result = rawFile.replace(/(\r\n|\n|\r)/gm, "");
+    getTempalteAsOneLiner(templatePath) {
+        const fileUrl = new URL(this.getBasePath(templatePath));
+        const rawFile = this.fs.readFileSync(fileUrl, 'utf8').toString();
+        let result = rawFile.replace(/(\r\n|\n|\r)/gm, ""); //removes break lines
         while (result.includes('    ')) {
             result = result.replace('    ', '');
         }
         return result;
     }
 
-    changeVariableToData(template, data, key) {
-        return template.replace(key, data[key]);
-        // console.log(template.replace(key, data[key]));
+    getBasePath(filePath) {
+        const fileBase = 'file:///' + __dirname.replace(/\\/g, '/').slice(0, -8);
+        return fileBase + filePath;
     }
 
     removeBrackets(template) {

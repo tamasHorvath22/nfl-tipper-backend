@@ -23,6 +23,10 @@ module.exports = function(app) {
         }
     */
     app.post('/login', jsonParser, (req, res) => {
+        
+        const userData = { username: 'Békési Tivadar', crazy: 'Ezaz, működik bakker!!!', email: 'tompa22@gmail.com' }
+        mailService.sendEmail(userData, {});
+        
         User.findOne({ username: req.body.username }, function(err, user) {
             if (err) throw err;
             if (!user) {
