@@ -12,7 +12,7 @@ module.exports = function(app) {
     const fs = require('fs')
     const emailTemplates = require('../common/constants/email-templates');
     const MailService = require('../services/email.service');
-    const mailService2 = new MailService(new Mailgun({ apiKey: process.env.EMAIL_API_KEY, domain: process.env.EMAIL_DOMAIN }), emailTemplates);
+    // const mailService2 = new MailService(new Mailgun({ apiKey: process.env.EMAIL_API_KEY, domain: process.env.EMAIL_DOMAIN }), emailTemplates);
     const mailService = new MailService(nodemailer, fs, emailTemplates);
 
     /* 

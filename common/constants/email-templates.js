@@ -1,7 +1,7 @@
 module.exports = Object.freeze({
     BASE_TEMPLATE_PATH: 'common/constants/templates/',
     CREDENTIALS: {
-        SENDER: 'horvathtamas22@gmail.com'
+        SENDER: 'info@nfl-tipper-game.com'
     },
     REGISTRATION: {
         SUBJECT: 'Welcome to NFL tipper!',

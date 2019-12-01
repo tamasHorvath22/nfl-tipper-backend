@@ -27,7 +27,7 @@ class MailService {
             from: this.mailTemplates.CREDENTIALS.SENDER,
             to: userData.email,
             subject: this.mailTemplates.REGISTRATION.SUBJECT,
-            html: this.fillVariablesIprepare(this.getTempalteAsOneLiner(this.mailTemplates.GET_REGISTRATION_TEMPLATE_PATH()), userData)
+            html: this._fillVariablesIprepare(this._getTempalteAsOneLiner(this.mailTemplates.GET_REGISTRATION_TEMPLATE_PATH()), userData)
         }
         
         transporter.sendMail(mailOptions, (err, info) => {
@@ -39,17 +39,17 @@ class MailService {
         });
     }
 
-    fillVariablesIprepare(template, data) {
+    _fillVariablesIprepare(template, data) {
         const keys = Object.keys(data);
         keys.forEach(key => {
             template = template.replace(key, data[key]);
         })
-        template = this.removeBrackets(template)
+        template = this._removeBrackets(template)
         return template;
     }
 
-    getTempalteAsOneLiner(templatePath) {
-        const fileUrl = new URL(this.getBasePath(templatePath));
+    _getTempalteAsOneLiner(templatePath) {
+        const fileUrl = new URL(this._getBasePath(templatePath));
         const rawFile = this.fs.readFileSync(fileUrl, 'utf8').toString();
         let result = rawFile.replace(/(\r\n|\n|\r)/gm, ""); //removes break lines
         while (result.includes('    ')) {
@@ -58,12 +58,12 @@ class MailService {
         return result;
     }
 
-    getBasePath(filePath) {
+    _getBasePath(filePath) {
         const fileBase = 'file:///' + __dirname.replace(/\\/g, '/').slice(0, -8);
         return fileBase + filePath;
     }
 
-    removeBrackets(template) {
+    _removeBrackets(template) {
         const brackets = ['{{ ', ' }}'];
         brackets.forEach(bracket => {
             while (template.includes(bracket)) {
