@@ -9,6 +9,11 @@ module.exports = function(app) {
     const responseMessage = require('../common/constants/api-response-messages');
     const mailType = require('../common/constants/email-type');
     const sendEmail = require('../modules/emailModule');
+    const takenCred = {
+        USERNAME: 'USERNAME',
+        EMAIL: 'EMAIL',
+        NONE: 'NONE'
+    }
 
     /* 
         request: 
@@ -70,13 +75,23 @@ module.exports = function(app) {
         });
         user.save(function(err) {
             if (err) {
-                res.send(responseMessage.USER.UNSUCCESSFUL_REGISTRATION);
-                throw err;
+                res.send(checkIfUsernameOrEmailTaken(err.errmsg, user.username, user.email))
+                return;
             };
             res.send(responseMessage.USER.SUCCESSFUL_REGISTRATION);
             // mailService.sendRegistrationEmail(user.email);
         });
     });
+
+    function checkIfUsernameOrEmailTaken (errorMessage, username, email) {
+        if (errorMessage.includes(username)) {
+            return responseMessage.USER.USERNAME_TAKEN;
+        } else if (errorMessage.includes(email)) {
+            return responseMessage.USER.EMAIL_TAKEN;
+        } else {
+            return responseMessage.USER.UNSUCCESSFUL_REGISTRATION;
+        }
+    };
 
     /* 
         request: 
@@ -106,30 +121,6 @@ module.exports = function(app) {
             })
         });
     });
-
-    /* 
-        request: 
-        { 
-            username: username,
-            email: email
-        }
-    */
-    app.post('/user-check', jsonParser, function (req, res) {
-        let occupied = []
-        User.findOne( { username: req.body.username }, function (err, user) {
-            if (err) { throw err }
-            if (user) {
-                occupied.push(responseMessage.USER.USERNAME_TAKEN)
-            }
-            User.findOne( { email: req.body.email }, function (err, user) {
-                if (err) { throw err }
-                if (user) {
-                    occupied.push(responseMessage.USER.EMAIL_TAKEN) 
-                }
-                res.json({ occupied: occupied })
-            })
-        })
-    })
 
     /* 
         no data needed, user returned from token data
