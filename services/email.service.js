@@ -26,7 +26,10 @@ class MailService {
     _fillVariablesIprepare(template, data) {
         const keys = Object.keys(data);
         keys.forEach(key => {
-            template = template.replace(key, data[key]);
+            while (template.includes(key)) {
+                template = template.replace(key, data[key]);
+            }
+            // template = template.replace(key, data[key]);
         })
         template = this._removeBrackets(template)
         return template;
