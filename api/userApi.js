@@ -7,13 +7,16 @@ module.exports = function(app) {
     const jwt = require('jsonwebtoken');
     const config = require('../config');
     const responseMessage = require('../common/constants/api-response-messages');
-    const nodemailer = require("nodemailer");
     const Mailgun = require('mailgun-js');
     const fs = require('fs')
     const emailTemplates = require('../common/constants/email-templates');
     const MailService = require('../services/email.service');
-    // const mailService2 = new MailService(new Mailgun({ apiKey: process.env.EMAIL_API_KEY, domain: process.env.EMAIL_DOMAIN }), emailTemplates);
-    const mailService = new MailService(nodemailer, fs, emailTemplates);
+    const mailType = require('../common/constants/email-type');
+    const mailService = new MailService(new Mailgun({ 
+        apiKey: process.env.MAILGUN_API_KEY,
+        domain: process.env.MAILGUN_DOMAIN,
+        host: process.env.MAILGUN_EU_HOST 
+    }), fs, emailTemplates);
 
     /* 
         request: 
@@ -24,9 +27,9 @@ module.exports = function(app) {
     */
     app.post('/login', jsonParser, (req, res) => {
         
-        const userData = { username: 'Békési Tivadar', crazy: 'Ezaz, működik bakker!!!', email: 'tompa22@gmail.com' }
-        mailService.sendEmail(userData, {});
-        
+        const userData = { username: 'Sztányi Adrienn', happy: 'Yess, it works :) !!!', email: 'tompa22@gmail.com' }
+        mailService.sendEmail(userData, mailType.LEAGUE_INVITE);
+
         User.findOne({ username: req.body.username }, function(err, user) {
             if (err) throw err;
             if (!user) {
@@ -77,28 +80,9 @@ module.exports = function(app) {
                 throw err;
             };
             res.send(responseMessage.USER.SUCCESSFUL_REGISTRATION);
-            mailService.sendRegistrationEmail(user.email);
+            // mailService.sendRegistrationEmail(user.email);
         });
     });
-
-    // function sendEmail (email) {
-    //     const mailgun = new Mailgun({ apiKey: process.env.EMAIL_API_KEY, domain: process.env.EMAIL_DOMAIN })
-    //     const data = {
-    //         from: 'no-reply@fl.tipper.com',
-    //         to: email,
-    //         subject: 'Welcome to NFL tipper!',
-    //         html: 'Na, kinek sikerült megoldania az email küldést? :)'
-    //     }
-
-    //     mailgun.messages().send(data, function(err, body) {
-    //         if (err) {
-    //             console.log("got an error: ", err);
-    //         } else {
-    //             console.log('body:');
-    //             console.log(body);
-    //         }
-    //     })
-    // }
 
     /* 
         request: 

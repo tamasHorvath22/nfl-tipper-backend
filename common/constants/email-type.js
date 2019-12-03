@@ -1,3 +1,4 @@
 module.exports = Object.freeze({
-    REGISTRATION: 'REGISTRATION'
+    REGISTRATION: 'REGISTRATION',
+    LEAGUE_INVITE: 'LEAGUE_INVITE'
 })

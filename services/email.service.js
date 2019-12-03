@@ -1,42 +1,26 @@
 class MailService {
 
-    constructor(nodemailer, fs, mailTemplates) {
-        this.nodemailer = nodemailer,
+    constructor(mailgun, fs, mailTemplates) {
+        this.mailgun = mailgun,
         this.fs = fs,
-        this.mailTemplates = mailTemplates,
-        this.data = { username: 'New Tibor', crazy: 'Crazzzy!!!' };
-        this.template = '<div><h3>Welcome to NFL tipper!</h3><div>Dear {{ username }}! We are so glad you registered to NFL tipper! {{ crazy }}</div></div>'
+        this.mailTemplates = mailTemplates
     };
 
-    /**
-     * 
-     * @param {*} userData 
-     * @param {*} emailData 
-     */
-    sendEmail(userData, emailData) {
-        let transporter = this.nodemailer.createTransport({
-            host: process.env.AMAZON_SMTP_SERVER,
-            port: process.env.AMAZON_SMTP_PORT,
-            auth: {
-                user: process.env.AMAZON_SMTP_USERNAME,
-                pass: process.env.AMAZON_SMTP_PASSWORD
-            }
-        });
-
-        const mailOptions = {
+    sendEmail(userData, mailType) {
+        const mailTemplate = this.mailTemplates[this.mailTemplates.GET_PRE + mailType]();
+        const data = {
             from: this.mailTemplates.CREDENTIALS.SENDER,
             to: userData.email,
-            subject: this.mailTemplates.REGISTRATION.SUBJECT,
-            html: this._fillVariablesIprepare(this._getTempalteAsOneLiner(this.mailTemplates.GET_REGISTRATION_TEMPLATE_PATH()), userData)
+            subject: mailTemplate.subject,
+            html: this._fillVariablesIprepare(this._getTempalteAsOneLiner(mailTemplate.path), userData)
         }
-        
-        transporter.sendMail(mailOptions, (err, info) => {
-            if(err) {
-                console.log(err);
-                throw err;
+
+        this.mailgun.messages().send(data, function(err, body) {
+            if (err) { throw err }
+            else {
+                console.log(body);
             }
-            console.log("Info: ", info);
-        });
+        })
     }
 
     _fillVariablesIprepare(template, data) {
@@ -72,23 +56,6 @@ class MailService {
         });
         return template;
     }
-
-    // sendRegistrationEmail(toEmail) {
-    //     const data = {
-    //         from: this.mailTemplates.CREDENTIALS.SENDER,
-    //         to: toEmail,
-    //         subject: 'Welcome to NFL tipper!',
-    //         html: 'Na, kinek sikerült megoldania az email küldést? :)'
-    //     }
-
-    //     this.mailgun.messages().send(data, function(err, body) {
-    //         if (err) { throw err }
-    //         else {
-    //             console.log('body:');
-    //             console.log(body);
-    //         }
-    //     })
-    // }
 }
 
 module.exports = MailService;
