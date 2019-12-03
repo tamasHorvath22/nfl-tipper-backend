@@ -7,16 +7,8 @@ module.exports = function(app) {
     const jwt = require('jsonwebtoken');
     const config = require('../config');
     const responseMessage = require('../common/constants/api-response-messages');
-    const Mailgun = require('mailgun-js');
-    const fs = require('fs')
-    const emailTemplates = require('../common/constants/email-templates');
-    const MailService = require('../services/email.service');
     const mailType = require('../common/constants/email-type');
-    const mailService = new MailService(new Mailgun({ 
-        apiKey: process.env.MAILGUN_API_KEY,
-        domain: process.env.MAILGUN_DOMAIN,
-        host: process.env.MAILGUN_EU_HOST 
-    }), fs, emailTemplates);
+    const sendEmail = require('../modules/emailModule');
 
     /* 
         request: 
@@ -29,7 +21,8 @@ module.exports = function(app) {
         
         // const userData = { username: 'Sztányi Adrienn', happy: 'Yess, it works :) !!!', email: 'tompa22@gmail.com' }
         const userData = { username: 'Sztányi Adrienn', email: 'tompa22@gmail.com', inviter: 'Tamas Horvath', leagueName: 'leagueNam1', applyLink: '444.hu' }
-        mailService.sendEmail(userData, mailType.LEAGUE_INVITE);
+        // mailService.sendEmail(userData, mailType.LEAGUE_INVITE);
+        sendEmail(userData, mailType.REGISTRATION);
 
         User.findOne({ username: req.body.username }, function(err, user) {
             if (err) throw err;
