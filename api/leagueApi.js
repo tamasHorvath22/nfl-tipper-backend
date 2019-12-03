@@ -2,9 +2,11 @@ module.exports = function(app) {
 
     const bodyParser = require('body-parser');
     const League = require('../models/leagueModel');
+    const LeagueInvitation = require('../models/leagueInvitation');
     const Player = require('../models/playerModel');
     const jsonParser = bodyParser.json();
     const responseMessage = require('../common/constants/api-response-messages');
+    const randomString = require('randomstring');
 
     // admin token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwidXNlcklkIjoiNWRkMjgyMTJmMDQ0MTgyNDIwNzBlYjQxIiwidXNlckVtYWlsIjoiYWRtaW5AYWRtaW4uY29tIiwiaWF0IjoxNTc0MDc2OTU3fQ.yo4tSBeUffGDk3q_xKAFWtHrxrg_HAZBnCmNEdoR-ww
     // admin jelszava
@@ -108,6 +110,20 @@ module.exports = function(app) {
         League.findById(req.body.leagueId, function (err, league) {
             if (err) throw err;
             res.json(league);
+        });
+    });
+
+    app.post('/api/league-invite', jsonParser, function (req, res) {
+        League.findById(req.body.leagueId, function (err, league) {
+            if (err) throw err;
+
+            const leagueInvitation = LeagueInvitation({
+                leagueId: body.leagueId,
+                invitedEmail: body.invitedEmail,
+                token: randomString.generate(15)
+            })
+
+            // TODO add invitations array to league, and push invites in
         });
     });
 }
