@@ -5,6 +5,7 @@ let leagueSchema = new Schema({
     name: { type : String, required: true, unique: true, dropDups: true },
     creator: { type : String },
     players: { type: Array },
+    invitations: { type: Array },
     leagueAvatarUrl: { type: String }
 }, { timestamps: true });
 

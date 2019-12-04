@@ -26,6 +26,7 @@ module.exports = function(app) {
         let league = League({
             name: req.body.name,
             creator: req.decoded.userId,
+            invitations: [],
             players: [
                 Player({
                     username: req.decoded.username,
@@ -40,13 +41,7 @@ module.exports = function(app) {
         // set leagueId for creator player
         league.players[0].leagueId = league._id;
 
-        league.save(function(err) {
-            if (err) {
-                res.send(responseMessage.LEAGUE.CREATE_FAIL);
-                throw err;
-            };
-            res.send(responseMessage.LEAGUE.CREATE_SUCCESS);
-        });
+        saveLeague(league, res, responseMessage.LEAGUE.CREATE_FAIL, responseMessage.LEAGUE.CREATE_SUCCESS);
     });
 
     /* 
@@ -57,12 +52,15 @@ module.exports = function(app) {
     */
     app.delete('/api/league', jsonParser, function (req, res) {
         League.findById(req.body.leagueId, function (err, league) {
-            if (err) throw err;
+            if (err) {
+                res.send(responseMessage.LEAGUE.NOT_FOUND);
+                return;
+            }
             if (req.decoded.userId === league.creator) {
                 League.deleteOne({ _id: req.body.leagueId }, function(deleteError) {
                     if (deleteError) {
                         res.send(responseMessage.LEAGUE.DELETE_ERROR);
-                        throw deleteError;
+                        return;
                     }
                     res.send(responseMessage.LEAGUE.DELETE_SUCCESS);
                 });
@@ -79,7 +77,10 @@ module.exports = function(app) {
     */
     app.put('/api/league', jsonParser, function (req, res) {
         League.findById(req.body.leagueId, function (err, league) {
-            if (err) throw err;
+            if (err) {
+                res.send(responseMessage.LEAGUE.NOT_FOUND);
+                return;
+            }
             if (req.decoded.userId === league.creator) {
                 const modifyableKeys = ['name', 'leagueAvatarUrl'];
                 let hasChanged = false;
@@ -91,11 +92,12 @@ module.exports = function(app) {
                 });
                 if (hasChanged) {
                     league.__v++;
-                    league.save();
-                    res.send(responseMessage.LEAGUE.UPDATE_SUCCESS);
+                    saveLeague(league, res, responseMessage.LEAGUE.UPDATE_FAIL, responseMessage.LEAGUE.UPDATE_SUCCESS);
                 } else {
                     res.send(responseMessage.COMMON.NO_CHANGES_MADE);
                 }
+            } else {
+                res.send(responseMessage.LEAGUE.NOT_AUTHORIZED);
             }
         });
     });
@@ -108,22 +110,49 @@ module.exports = function(app) {
     */
     app.get('/api/league', jsonParser, function (req, res) {
         League.findById(req.body.leagueId, function (err, league) {
-            if (err) throw err;
+            if (err) {
+                res.send(responseMessage.LEAGUE.NOT_FOUND);
+                return;
+            }
             res.json(league);
         });
     });
 
-    app.post('/api/league-invite', jsonParser, function (req, res) {
+    /* 
+        request: 
+        { 
+            leagueId: leagueId,
+            invitedEmail: invitedEmail
+        }
+    */
+    app.post('/api/league/invite', jsonParser, function (req, res) {
         League.findById(req.body.leagueId, function (err, league) {
-            if (err) throw err;
-
-            const leagueInvitation = LeagueInvitation({
-                leagueId: body.leagueId,
-                invitedEmail: body.invitedEmail,
-                token: randomString.generate(15)
-            })
-
-            // TODO add invitations array to league, and push invites in
+            if (err) {
+                res.send(responseMessage.LEAGUE.NOT_FOUND);
+                return;
+            }
+            if (req.decoded.userId === league.creator) {
+                league.invitations.push(
+                    LeagueInvitation({
+                        leagueId: req.body.leagueId,
+                        invitedEmail: req.body.invitedEmail,
+                        token: randomString.generate(15)
+                }))
+    
+                saveLeague(league, res, responseMessage.LEAGUE.INVITATION_FAIL, responseMessage.LEAGUE.INVITATION_SUCCESS);
+            } else {
+                res.send(responseMessage.LEAGUE.NOT_AUTHORIZED);
+            }
         });
     });
+
+    function saveLeague(league, res, errMess, succMess) {
+        league.save(function(err) {
+            if (err) {
+                res.send(errMess);
+                return;
+            };
+            res.send(succMess);
+        });
+    }
 }
