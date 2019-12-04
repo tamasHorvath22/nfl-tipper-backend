@@ -18,14 +18,14 @@ module.exports = function(app, ProtectedRoutes) {
             jwt.verify(token, config.getJwtPrivateKey(), (err, decoded) => {
                 if (err) {
                     res.send(responseMessage.USER.TOKEN_ERROR);
-                    throw err;
+                    return;
                 } else {
                     req.decoded = decoded;
                     next();
                 }
             });
         } else {
-        res.send(responseMessage.USER.MISSING_TOKEN);
+            res.send(responseMessage.USER.MISSING_TOKEN);
         }
     });
 

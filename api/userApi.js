@@ -30,13 +30,19 @@ module.exports = function(app) {
         sendEmail(userData, mailType.REGISTRATION);
 
         User.findOne({ username: req.body.username }, function(err, user) {
-            if (err) throw err;
+            if (err) {
+                res.send(responseMessage.USER.ERROR);
+                return;
+            };
             if (!user) {
                 res.send(responseMessage.USER.WRONG_USERNAME_OR_PASSWORD);
                 return;
             }
             bcrypt.compare(req.body.password, user.password, function(error, authenticated) {
-                if (error) throw error;
+                if (error) {
+                    res.send(responseMessage.USER.AUTHENTICATION_ERROR);
+                    return;
+                }
                 if (authenticated) {
                     const userObj = {
                         username: user.username,
@@ -46,7 +52,7 @@ module.exports = function(app) {
                     jwt.sign(userObj, config.getJwtPrivateKey(), function(tokenError, token) {
                         if (tokenError) {
                             res.send(responseMessage.USER.TOKEN_CREATE_ERROR);
-                            throw tokenError
+                            return;
                         };
                         res.json({ token: token });
                     });
@@ -104,12 +110,12 @@ module.exports = function(app) {
         User.findOne({ username: req.decoded.username }, function(err, user) {
             if (err) {
                 res.send(responseMessage.USER.WRONG_USERNAME_OR_PASSWORD);
-                throw err;
+                return;
             };
             bcrypt.compare(req.body.oldPassword, user.password, function(error, authenticated) {
                 if (error) {
                     res.send(responseMessage.USER.AUTHENTICATION_ERROR);
-                    throw error;
+                    return;
                 };
                 if (authenticated) {
                     user.password = req.body.newPassword;
@@ -127,7 +133,10 @@ module.exports = function(app) {
     */
     app.post('/api/get-user', jsonParser, function (req, res) {
         User.findOne({ username: req.decoded.username }, function (err, user) {
-            if (err) { throw err }
+            if (err) { 
+                res.send(responseMessage.USER.NOT_FOUND);
+                return;
+            }
             res.json(user)
         })
     })

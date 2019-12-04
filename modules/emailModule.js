@@ -4,10 +4,10 @@ const getTemplate = require('./templateModule');
 const mailgun = new Mailgun({ 
     apiKey: process.env.MAILGUN_API_KEY,
     domain: process.env.MAILGUN_DOMAIN,
-    host: process.env.MAILGUN_EU_HOST 
+    host: process.env.MAILGUN_EU_HOST
 });
 
-module.exports = function(userData, mailType) {
+module.exports = function (userData, mailType) {
     const mailTemplate = mailTemplates[mailTemplates.GET_PRE + mailType]();
     const data = {
         from: mailTemplates.CREDENTIALS.SENDER,
