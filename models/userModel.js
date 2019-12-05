@@ -8,7 +8,8 @@ let userSchema = new Schema({
     password: { type : String, required: true },
     email: { type : String, unique: true, required: true },
     avatarUrl: { type: String },
-    leagues: []
+    leagues: [],
+    invitations: []
 }, { timestamps: true });
 
 userSchema.pre('save', function (next) {
