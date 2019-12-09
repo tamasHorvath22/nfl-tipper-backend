@@ -8,6 +8,7 @@ module.exports = function(app) {
     const responseMessage = require('../common/constants/api-response-messages');
     const sendEmail = require('../modules/emailModule');
     const User = require('../models/userModel');
+    const mongoose = require('mongoose');
 
     // admin token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwidXNlcklkIjoiNWRkMjgyMTJmMDQ0MTgyNDIwNzBlYjQxIiwidXNlckVtYWlsIjoiYWRtaW5AYWRtaW4uY29tIiwiaWF0IjoxNTc0MDc2OTU3fQ.yo4tSBeUffGDk3q_xKAFWtHrxrg_HAZBnCmNEdoR-ww
     // admin jelszava
@@ -116,19 +117,41 @@ module.exports = function(app) {
         });
     });
 
+    // /* 
+    //     request: 
+    //     { 
+    //         leagueId: leagueId
+    //     }
+    // */
+    // app.get('/api/league', jsonParser, function (req, res) {
+    //     League.findById(req.body.leagueId, function (err, league) {
+    //         if (err) {
+    //             res.send(responseMessage.LEAGUE.NOT_FOUND);
+    //             return;
+    //         }
+    //         res.json(league);
+    //     });
+    // });
+
     /* 
         request: 
         { 
-            leagueId: leagueId
+            leagues: list of league ids,
+            property: the property to find by
         }
     */
-    app.get('/api/league', jsonParser, function (req, res) {
-        League.findById(req.body.leagueId, function (err, league) {
+    app.post('/api/get-leagues', jsonParser, (req, res) => {
+        let idArray = []
+        req.body.leagues.forEach(league => {
+            idArray.push(mongoose.Types.ObjectId(league))
+        })
+
+        League.find({ [req.body.property]: { $in: idArray } }, (err, leagues) => {
             if (err) {
-                res.send(responseMessage.LEAGUE.NOT_FOUND);
+                res.send(responseMessage.LEAGUE.LEAGUES_NOT_FOUND);
                 return;
             }
-            res.json(league);
+            res.json(leagues);
         });
     });
 
