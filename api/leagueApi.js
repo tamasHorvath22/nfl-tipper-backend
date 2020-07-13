@@ -1,14 +1,19 @@
+const schemas = require('../common/constants/schemas');
+
 module.exports = function(app) {
 
     const bodyParser = require('body-parser');
     const League = require('../models/leagueModel');
     const LeagueInvitation = require('../models/leagueInvitationModel');
     const Player = require('../models/playerModel');
+    const Season = require('../models/seasonModel');
+    const Week = require('../models/weekModel');
     const jsonParser = bodyParser.json();
     const responseMessage = require('../common/constants/api-response-messages');
     const sendEmail = require('../modules/emailModule');
     const User = require('../models/userModel');
     const mongoose = require('mongoose');
+    const Transaction = require('mongoose-transactions');
 
     // admin token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwidXNlcklkIjoiNWRkMjgyMTJmMDQ0MTgyNDIwNzBlYjQxIiwidXNlckVtYWlsIjoiYWRtaW5AYWRtaW4uY29tIiwiaWF0IjoxNTc0MDc2OTU3fQ.yo4tSBeUffGDk3q_xKAFWtHrxrg_HAZBnCmNEdoR-ww
     // admin jelszava
@@ -24,39 +29,41 @@ module.exports = function(app) {
             leagueAvatarUrl: leagueAvatarUrl
         }
     */
-    app.post('/api/league', jsonParser, function (req, res) {
+
+    app.post('/api/league', jsonParser, async function (req, res) {
+        const currentYear = new Date().getFullYear();
+
         let league = League({
             name: req.body.name,
             creator: req.decoded.userId,
             invitations: [],
-            players: [
-                Player({
-                    username: req.decoded.username,
-                    userId: req.decoded.userId,
-                    leaguePoints: 0,
-                    leagueId: null
+            players: [req.decoded.userId],
+            seasons: [
+                Season({
+                    year: currentYear,
+                    numberOfSeason: currentYear - 1919,
+                    numberOfSuperBowl: currentYear - 1965,
+                    weeks: [],
+                    isOver: false
                 })
             ],
             leagueAvatarUrl: req.body.leagueAvatarUrl || null
         });
 
-        // set leagueId for creator player
-        league.players[0].leagueId = league._id;
-        saveLeague(league, res, responseMessage.LEAGUE.CREATE_FAIL, responseMessage.LEAGUE.CREATE_SUCCESS);
+        const user = await User.findById(req.decoded.userId).exec();
+        user.leagues.push(league._id);
 
-        User.findById(req.decoded.userId, function(err, user) {
-            if (err) {
-                // TODO
-            }
-            if (user) {
-                user.leagues.push(league._id);
-                user.save(function(err) {
-                    if (err) {
-                        // TODO
-                    }
-                })
-            }
-        })
+        const transaction = new Transaction(true);
+        transaction.insert(schemas.LEAGUE, league);
+        transaction.insert(schemas.USER, user);
+
+        try {
+            await transaction.run();
+            res.send(responseMessage.LEAGUE.CREATE_SUCCESS);
+        } catch (err)  {
+            res.send(responseMessage.LEAGUE.CREATE_FAIL);
+            transaction.rollback();
+        };
     });
 
     /* 

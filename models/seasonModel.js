@@ -1,11 +1,13 @@
-import { Schema as _Schema, model } from 'mongoose';
-const Schema = _Schema;
+const mongoose = require('mongoose');
+const schemas = require('../common/constants/schemas');
+let Schema = mongoose.Schema;
 
 let seasonSchema = new Schema({
     year: Number,
     numberOfSeason: Number,
+    numberOfSuperBowl: Number,
     weeks: [],
     isOver: Boolean
 }, { timestamps: true });
 
-export default model('Season', seasonSchema);
+module.exports = mongoose.model(schemas.SEASON, seasonSchema);

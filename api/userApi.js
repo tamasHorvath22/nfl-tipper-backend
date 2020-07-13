@@ -8,6 +8,7 @@ module.exports = function(app) {
     const config = require('../config');
     const responseMessage = require('../common/constants/api-response-messages');
     const mailType = require('../common/constants/email-type');
+    const schemas = require('../common/constants/schemas');
     const sendEmail = require('../modules/emailModule');
     const Transaction = require('mongoose-transactions');
 
@@ -78,7 +79,7 @@ module.exports = function(app) {
         });
 
         const transaction = new Transaction(true);
-        transaction.insert('User', user);
+        transaction.insert(schemas.USER, user);
         try {
             await transaction.run();
             res.send(responseMessage.USER.SUCCESSFUL_REGISTRATION);
@@ -102,7 +103,6 @@ module.exports = function(app) {
                 res.send(responseMessage.USER.ERROR);
                 return;
             };
-            console.log(user);
             user.email = req.body.email;
             user.save();
         });
