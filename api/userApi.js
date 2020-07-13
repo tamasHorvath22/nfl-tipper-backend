@@ -9,6 +9,7 @@ module.exports = function(app) {
     const responseMessage = require('../common/constants/api-response-messages');
     const mailType = require('../common/constants/email-type');
     const sendEmail = require('../modules/emailModule');
+    const Transaction = require('mongoose-transactions');
 
     /* 
         request: 
@@ -67,7 +68,7 @@ module.exports = function(app) {
             email: email
         }
     */
-    app.post('/register', jsonParser, function (req, res) {
+    app.post('/register', jsonParser, async function (req, res) {
         let user = User({
             username: req.body.username,
             password: req.body.password,
@@ -75,25 +76,38 @@ module.exports = function(app) {
             leagues: [],
             avatarUrl: null
         });
-        user.save(function(err) {
+
+        const transaction = new Transaction(true);
+        transaction.insert('User', user);
+        try {
+            await transaction.run();
+            res.send(responseMessage.USER.SUCCESSFUL_REGISTRATION);
+        } catch (err)  {
+            transaction.rollback();
+            let source;
+            if (err.error.keyPattern.hasOwnProperty('username')) {
+                source = responseMessage.USER.USERNAME_TAKEN;
+            } else if (err.error.keyPattern.hasOwnProperty('email')) {
+                source = responseMessage.USER.EMAIL_TAKEN;
+            } else {
+                source = responseMessage.USER.UNSUCCESSFUL_REGISTRATION;
+            }
+            res.send(source);
+        };
+    });
+
+    app.post('/api/user/change', jsonParser, function (req, res) {
+        User.findOne({ username: req.body.username }, function(err, user) {
             if (err) {
-                res.send(checkIfUsernameOrEmailTaken(err.errmsg, user.username, user.email))
+                res.send(responseMessage.USER.ERROR);
                 return;
             };
-            res.send(responseMessage.USER.SUCCESSFUL_REGISTRATION);
-            // mailService.sendRegistrationEmail(user.email);
+            console.log(user);
+            user.email = req.body.email;
+            user.save();
         });
     });
 
-    function checkIfUsernameOrEmailTaken (errorMessage, username, email) {
-        if (errorMessage.includes(username)) {
-            return responseMessage.USER.USERNAME_TAKEN;
-        } else if (errorMessage.includes(email)) {
-            return responseMessage.USER.EMAIL_TAKEN;
-        } else {
-            return responseMessage.USER.UNSUCCESSFUL_REGISTRATION;
-        }
-    };
 
     /* 
         request: 
