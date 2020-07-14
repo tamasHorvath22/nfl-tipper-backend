@@ -21,11 +21,9 @@ module.exports = function(app) {
     */
     app.post('/login', jsonParser, (req, res) => {
         
-        // const userData = { username: 'Sztányi Adrienn', happy: 'Yess, it works :) !!!', email: 'tompa22@gmail.com' }
         const userData = { username: 'Sztányi Adrienn', email: 'tompa22@gmail.com', inviter: 'Tamas Horvath', leagueName: 'leagueNam1', applyLink: '444.hu' }
-        // mailService.sendEmail(userData, mailType.LEAGUE_INVITE);
 
-        // sendEmail(userData, mailType.REGISTRATION);
+        // sendEmail(userData, mailType.REGISTRATION); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
 
         User.findOne({ username: req.body.username }, function(err, user) {
             if (err) {

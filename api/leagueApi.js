@@ -66,63 +66,63 @@ module.exports = function(app) {
         };
     });
 
-    /* 
-        request: 
-        { 
-            leagueId: leagueId
-        }
-    */
-    app.delete('/api/league', jsonParser, function (req, res) {
-        League.findById(req.body.leagueId, function (err, league) {
-            if (err) {
-                res.send(responseMessage.LEAGUE.NOT_FOUND);
-                return;
-            }
-            if (req.decoded.userId === league.creator) {
-                League.deleteOne({ _id: req.body.leagueId }, function(deleteError) {
-                    if (deleteError) {
-                        res.send(responseMessage.LEAGUE.DELETE_ERROR);
-                        return;
-                    }
-                    res.send(responseMessage.LEAGUE.DELETE_SUCCESS);
-                });
-            }
-        });
-    });
+    // /* 
+    //     request: 
+    //     { 
+    //         leagueId: leagueId
+    //     }
+    // */
+    // app.delete('/api/league', jsonParser, function (req, res) {
+    //     League.findById(req.body.leagueId, function (err, league) {
+    //         if (err) {
+    //             res.send(responseMessage.LEAGUE.NOT_FOUND);
+    //             return;
+    //         }
+    //         if (req.decoded.userId === league.creator) {
+    //             League.deleteOne({ _id: req.body.leagueId }, function(deleteError) {
+    //                 if (deleteError) {
+    //                     res.send(responseMessage.LEAGUE.DELETE_ERROR);
+    //                     return;
+    //                 }
+    //                 res.send(responseMessage.LEAGUE.DELETE_SUCCESS);
+    //             });
+    //         }
+    //     });
+    // });
 
-    /* 
-        request: 
-        { 
-            leagueId: leagueId,
-            data: {}  --> league fields with data
-        }
-    */
-    app.put('/api/league', jsonParser, function (req, res) {
-        League.findById(req.body.leagueId, function (err, league) {
-            if (err) {
-                res.send(responseMessage.LEAGUE.NOT_FOUND);
-                return;
-            }
-            if (req.decoded.userId === league.creator) {
-                const modifyableKeys = ['name', 'leagueAvatarUrl'];
-                let hasChanged = false;
-                Object.keys(req.body.data).forEach(key => {
-                    if (modifyableKeys.includes(key) && league[key]) {
-                        league[key] = req.body.data[key];
-                        hasChanged = true;
-                    }
-                });
-                if (hasChanged) {
-                    league.__v++;
-                    saveLeague(league, res, responseMessage.LEAGUE.UPDATE_FAIL, responseMessage.LEAGUE.UPDATE_SUCCESS);
-                } else {
-                    res.send(responseMessage.COMMON.NO_CHANGES_MADE);
-                }
-            } else {
-                res.send(responseMessage.LEAGUE.NOT_AUTHORIZED);
-            }
-        });
-    });
+    // /* 
+    //     request: 
+    //     { 
+    //         leagueId: leagueId,
+    //         data: {}  --> league fields with data
+    //     }
+    // */
+    // app.put('/api/league', jsonParser, function (req, res) {
+    //     League.findById(req.body.leagueId, function (err, league) {
+    //         if (err) {
+    //             res.send(responseMessage.LEAGUE.NOT_FOUND);
+    //             return;
+    //         }
+    //         if (req.decoded.userId === league.creator) {
+    //             const modifyableKeys = ['name', 'leagueAvatarUrl'];
+    //             let hasChanged = false;
+    //             Object.keys(req.body.data).forEach(key => {
+    //                 if (modifyableKeys.includes(key) && league[key]) {
+    //                     league[key] = req.body.data[key];
+    //                     hasChanged = true;
+    //                 }
+    //             });
+    //             if (hasChanged) {
+    //                 league.__v++;
+    //                 saveLeague(league, res, responseMessage.LEAGUE.UPDATE_FAIL, responseMessage.LEAGUE.UPDATE_SUCCESS);
+    //             } else {
+    //                 res.send(responseMessage.COMMON.NO_CHANGES_MADE);
+    //             }
+    //         } else {
+    //             res.send(responseMessage.LEAGUE.NOT_AUTHORIZED);
+    //         }
+    //     });
+    // });
 
     // /* 
     //     request: 
@@ -169,141 +169,72 @@ module.exports = function(app) {
             invitedEmail: invitedEmail
         }
     */
-    app.post('/api/league/invite', jsonParser, function (req, res) {
-        League.findById(req.body.leagueId, function (err, league) {
-            if (err) {
-                res.send(responseMessage.LEAGUE.NOT_FOUND);
-                return;
-            }
-            if (req.decoded.userId === league.creator) {
-                const leagueInvitation = LeagueInvitation({
-                    leagueId: req.body.leagueId,
-                    invitorId: req.decoded.userId,
-                    invitedEmail: req.body.invitedEmail
-                })
-                User.findOne( { email: req.body.invitedEmail }, function(err, user) {
-                    if (err) {
-                        // TODO log
-                    }
-                    if (user) {
-                        user.invitations.push(leagueInvitation)
-                        user.save(function(err) {
-                            if (err) {
-                                // TODO log
-                                return;
-                            };
-                            // TODO log
-                        })
-                    } else {
-                        leagueInvitation.save(function(err) {
-                            if (err) {
-                                // TODO log
-                                return;
-                            };
-                            // TODO log
-                        })
-                    }
-                })
-    
-                // saveLeague(league, res, responseMessage.LEAGUE.INVITATION_FAIL, responseMessage.LEAGUE.INVITATION_SUCCESS);
+    app.post('/api/league/invite', jsonParser, async function (req, res) {
 
+        const league = await League.findById(req.body.leagueId).exec();
+        const invitedUser = await User.findOne({ email: req.body.invitedEmail }).exec();
+        if (!invitedUser) {
+            res.send(responseMessage.USER.NO_EMAIL_FOUND);
+            return;
+        }
+
+        if (req.decoded.userId !== league.creator) {
+            res.send(responseMessage.LEAGUE.NO_INVITATION_RIGHT);
+        } else {
+            league.invitations.push(req.body.invitedEmail);
+            invitedUser.invitations.push(league._id);
+            const transaction = new Transaction(true);
+            transaction.insert(schemas.LEAGUE, league);
+            transaction.insert(schemas.USER, invitedUser);
+            try {
+                await transaction.run();
                 // sendEmail();
-            } else {
-                res.send(responseMessage.LEAGUE.NOT_AUTHORIZED);
-            }
-        });
+                res.send(responseMessage.LEAGUE.INVITATION_SUCCESS);
+            } catch (err)  {
+                res.send(responseMessage.LEAGUE.INVITATION_FAIL);
+                transaction.rollback();
+            };
+        }
     });
 
-    /* 
+     /* 
         request: 
         { 
             leagueId: leagueId,
-            invitationId: invitationId
+            invitedEmail: invitedEmail
         }
     */
-    app.put('/api/league/invite', jsonParser, function (req, res) {
-        League.findById(req.body.leagueId, function (err, league) {
-            if (err) {
-                res.send(responseMessage.LEAGUE.NOT_FOUND);
-                return;
-            }
-            league.players.push(
-                Player({
-                    username: req.decoded.username,
-                    userId: req.decoded.userId,
-                    leaguePoints: 0,
-                    leagueId: req.body.leagueId
-                })
-            )
-            league.save(function(err) {
-                if (err) {
-                    // TODO
-                }
-            })
+    app.post('/api/league/delete-invite', jsonParser, async function (req, res) {
 
-            User.findById(req.decoded.userId, function(err, user) {
-                if (err) {
-                    // TODO
-                }
-                if (user) {
-                    user.leagues.push(league._id);
-                    user.save(function(err) {
-                        if (err) {
-                            // TODO
-                        }
-                    })
-                }
-            })
-            deleteInvitation(req.body.invitationId, req.decoded.userId);
-        });
+        const league = await League.findById(req.body.leagueId).exec();
+        const invitedUser = await User.findOne({ email: req.body.invitedEmail }).exec();
+
+        if (req.decoded.userId !== league.creator) {
+            res.send(responseMessage.LEAGUE.NO_INVITATION_RIGHT);
+        } else {
+            league.invitations.splice(league.invitations.indexOf(req.body.invitedEmail), 1);
+            invitedUser.invitations.splice(invitedUser.invitations.indexOf(league._id));
+            const transaction = new Transaction(true);
+            transaction.insert(schemas.LEAGUE, league);
+            transaction.insert(schemas.USER, invitedUser);
+            try {
+                await transaction.run();
+                // sendEmail();
+                res.send(responseMessage.LEAGUE.INVITATION_DELETE_SUCCESS);
+            } catch (err)  {
+                res.send(responseMessage.LEAGUE.INVITATION_DELETE_FAIL);
+                transaction.rollback();
+            };
+        }
     });
 
-    function deleteInvitation(invitationId, userId) {
-        LeagueInvitation.deleteOne({ _id: req.body.invitationId }, function(err) {
-            if (err) {
-                res.send(responseMessage.LEAGUE.DELETE_ERROR);
-                return;
-            }
-            res.send(responseMessage.LEAGUE.DELETE_SUCCESS);
-        });
-
-
-        LeagueInvitation.findById(invitationId, function(err, invitation) {
-            if (err) {
-                // res.send(errMess);
-                return;
-            }
-            if (!invitation) {
-                User.findById(userId, function(err, user) {
-                    if (err) {
-                        // res.send(errMess);
-                        return;
-                    }
-                    for (let i = 0; i < user.invitations.length; i++) {
-                        if (user.invitations[i]._id === invitationId) {
-                            user.invitations.splice(i, 1);
-                            break;
-                        }
-                    }
-                    user.save(function(err) {
-                        if (err) {
-                            // TODO
-                        }
-                    })
-                })
-            } else {
-
-            }
-        })
-    }
-
-    function saveLeague(league, res, errMess, succMess) {
-        league.save(function(err) {
-            if (err) {
-                res.send(errMess);
-                return;
-            };
-            res.send(succMess);
-        });
-    }
+    // function saveLeague(league, res, errMess, succMess) {
+    //     league.save(function(err) {
+    //         if (err) {
+    //             res.send(errMess);
+    //             return;
+    //         };
+    //         res.send(succMess);
+    //     });
+    // }
 }
