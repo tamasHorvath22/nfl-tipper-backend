@@ -37,14 +37,16 @@ module.exports = function(app) {
             name: req.body.name,
             creator: req.decoded.userId,
             invitations: [],
-            players: [req.decoded.userId],
+            players: [{ id: req.decoded.userId, name: req.decoded.username }],
             seasons: [
                 Season({
                     year: currentYear,
                     numberOfSeason: currentYear - 1919,
                     numberOfSuperBowl: currentYear - 1965,
                     weeks: [],
-                    isOver: false
+                    standings: [{ id: req.decoded.userId, name: req.decoded.username, score: 0 }],
+                    isOver: false,
+                    isCurrent: true
                 })
             ],
             leagueAvatarUrl: req.body.leagueAvatarUrl || null
@@ -66,100 +68,78 @@ module.exports = function(app) {
         };
     });
 
-    // /* 
-    //     request: 
-    //     { 
-    //         leagueId: leagueId
-    //     }
-    // */
-    // app.delete('/api/league', jsonParser, function (req, res) {
-    //     League.findById(req.body.leagueId, function (err, league) {
-    //         if (err) {
-    //             res.send(responseMessage.LEAGUE.NOT_FOUND);
-    //             return;
-    //         }
-    //         if (req.decoded.userId === league.creator) {
-    //             League.deleteOne({ _id: req.body.leagueId }, function(deleteError) {
-    //                 if (deleteError) {
-    //                     res.send(responseMessage.LEAGUE.DELETE_ERROR);
-    //                     return;
-    //                 }
-    //                 res.send(responseMessage.LEAGUE.DELETE_SUCCESS);
-    //             });
-    //         }
-    //     });
-    // });
+    /* 
+        request: 
+        { 
+            leagueId: leagueId
+        }
+    */
 
-    // /* 
-    //     request: 
-    //     { 
-    //         leagueId: leagueId,
-    //         data: {}  --> league fields with data
-    //     }
-    // */
-    // app.put('/api/league', jsonParser, function (req, res) {
-    //     League.findById(req.body.leagueId, function (err, league) {
-    //         if (err) {
-    //             res.send(responseMessage.LEAGUE.NOT_FOUND);
-    //             return;
-    //         }
-    //         if (req.decoded.userId === league.creator) {
-    //             const modifyableKeys = ['name', 'leagueAvatarUrl'];
-    //             let hasChanged = false;
-    //             Object.keys(req.body.data).forEach(key => {
-    //                 if (modifyableKeys.includes(key) && league[key]) {
-    //                     league[key] = req.body.data[key];
-    //                     hasChanged = true;
-    //                 }
-    //             });
-    //             if (hasChanged) {
-    //                 league.__v++;
-    //                 saveLeague(league, res, responseMessage.LEAGUE.UPDATE_FAIL, responseMessage.LEAGUE.UPDATE_SUCCESS);
-    //             } else {
-    //                 res.send(responseMessage.COMMON.NO_CHANGES_MADE);
-    //             }
-    //         } else {
-    //             res.send(responseMessage.LEAGUE.NOT_AUTHORIZED);
-    //         }
-    //     });
-    // });
+    app.post('/api/accept-league-invitation', jsonParser, async function (req, res) {
 
-    // /* 
-    //     request: 
-    //     { 
-    //         leagueId: leagueId
-    //     }
-    // */
-    // app.get('/api/league', jsonParser, function (req, res) {
-    //     League.findById(req.body.leagueId, function (err, league) {
-    //         if (err) {
-    //             res.send(responseMessage.LEAGUE.NOT_FOUND);
-    //             return;
-    //         }
-    //         res.json(league);
-    //     });
-    // });
+        const league = await League.findById(req.body.leagueId).exec();
+        const user = await User.findById(req.decoded.userId).exec();
+
+        if (!league.invitations.includes(user._id)) {
+            res.send(responseMessage.LEAGUE.USER_NOT_INVITED);
+            return;
+        }
+        user.invitations.splice(user.invitations.indexOf(league._id), 1);
+        user.leagues.push(league._id);
+        league.invitations.splice(league.invitations.indexOf(user._id));
+        league.players.push({ id: user._id, name: user.username });
+
+        const transaction = new Transaction(true);
+        transaction.insert(schemas.LEAGUE, league);
+        transaction.insert(schemas.USER, user);
+
+        try {
+            await transaction.run();
+            res.send(responseMessage.LEAGUE.JOIN_SUCCESS);
+        } catch (err)  {
+            res.send(responseMessage.LEAGUE.JOIN_FAIL);
+            transaction.rollback();
+        };
+    });
 
     /* 
         request: 
         { 
-            leagues: list of league ids,
-            property: the property to find by
+            leagueIds: list of league ids
         }
     */
     app.post('/api/get-leagues', jsonParser, (req, res) => {
         let idArray = []
-        req.body.leagues.forEach(league => {
+        req.body.leagueIds.forEach(league => {
             idArray.push(mongoose.Types.ObjectId(league))
         })
 
-        League.find({ [req.body.property]: { $in: idArray } }, (err, leagues) => {
+        League.find({ _id: { $in: idArray } }, (err, leagues) => {
             if (err) {
                 res.send(responseMessage.LEAGUE.LEAGUES_NOT_FOUND);
                 return;
             }
-            res.json(leagues);
+            const leagueNames = []
+            leagues.forEach(league => {
+                leagueNames.push({ _id: league._id, name: league.name })
+            })
+            res.json(leagueNames);
         });
+    });
+
+    /* 
+        request: 
+        { 
+            leagueId: leagueId
+        }
+    */
+    app.post('/api/get-league', jsonParser, async (req, res) => {
+        const league = await League.findById(req.body.leagueId).exec();
+        if (!league) {
+            res.send(responseMessage.LEAGUE.NOT_FOUND);
+        } else {
+            res.json(league);
+        }
     });
 
     /* 
@@ -177,11 +157,15 @@ module.exports = function(app) {
             res.send(responseMessage.USER.NO_EMAIL_FOUND);
             return;
         }
+        if (league.invitations.includes(invitedUser._id) || invitedUser.invitations.includes(league._id)) {
+            res.send(responseMessage.LEAGUE.USER_ALREADY_INVITED);
+            return;
+        }
 
         if (req.decoded.userId !== league.creator) {
             res.send(responseMessage.LEAGUE.NO_INVITATION_RIGHT);
         } else {
-            league.invitations.push(req.body.invitedEmail);
+            league.invitations.push(invitedUser._id);
             invitedUser.invitations.push(league._id);
             const transaction = new Transaction(true);
             transaction.insert(schemas.LEAGUE, league);
@@ -212,7 +196,7 @@ module.exports = function(app) {
         if (req.decoded.userId !== league.creator) {
             res.send(responseMessage.LEAGUE.NO_INVITATION_RIGHT);
         } else {
-            league.invitations.splice(league.invitations.indexOf(req.body.invitedEmail), 1);
+            league.invitations.splice(league.invitations.indexOf(invitedUser._id), 1);
             invitedUser.invitations.splice(invitedUser.invitations.indexOf(league._id));
             const transaction = new Transaction(true);
             transaction.insert(schemas.LEAGUE, league);

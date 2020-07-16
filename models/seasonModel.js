@@ -7,7 +7,9 @@ let seasonSchema = new Schema({
     numberOfSeason: Number,
     numberOfSuperBowl: Number,
     weeks: [],
-    isOver: Boolean
+    isOver: Boolean,
+    isCurrent: Boolean,
+    standings: []
 }, { timestamps: true });
 
 module.exports = mongoose.model(schemas.SEASON, seasonSchema);

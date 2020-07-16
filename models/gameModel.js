@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const schemas = require('../common/constants/schemas');
 const Schema = mongoose.Schema;
 
 let gameSchema = new Schema({
@@ -13,4 +14,4 @@ let gameSchema = new Schema({
     gameStartTime: { type: Date }
 }, { timestamps: true });
 
-module.exports = mongoose.model('Game', gameSchema);
+module.exports = mongoose.model(schemas.GAME, gameSchema);
