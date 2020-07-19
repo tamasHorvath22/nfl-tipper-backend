@@ -32,19 +32,20 @@ module.exports = function(app) {
 
     app.post('/api/league', jsonParser, async function (req, res) {
         const currentYear = new Date().getFullYear();
+        const user = await User.findById(req.decoded.userId).exec();
 
         let league = League({
             name: req.body.name,
             creator: req.decoded.userId,
             invitations: [],
-            players: [{ id: req.decoded.userId, name: req.decoded.username }],
+            players: [{ id: user._id, name: req.decoded.username }],
             seasons: [
                 Season({
                     year: currentYear,
                     numberOfSeason: currentYear - 1919,
                     numberOfSuperBowl: currentYear - 1965,
                     weeks: [],
-                    standings: [{ id: req.decoded.userId, name: req.decoded.username, score: 0 }],
+                    standings: [{ id: user._id, name: req.decoded.username, score: 0 }],
                     isOver: false,
                     isCurrent: true
                 })
@@ -52,8 +53,7 @@ module.exports = function(app) {
             leagueAvatarUrl: req.body.leagueAvatarUrl || null
         });
 
-        const user = await User.findById(req.decoded.userId).exec();
-        user.leagues.push(league._id);
+        user.leagues.push({ leagueId: league._id, name: league.name });
 
         const transaction = new Transaction(true);
         transaction.insert(schemas.LEAGUE, league);
@@ -61,7 +61,8 @@ module.exports = function(app) {
 
         try {
             await transaction.run();
-            res.send(responseMessage.LEAGUE.CREATE_SUCCESS);
+            res.json(user)
+            // res.send(responseMessage.LEAGUE.CREATE_SUCCESS);
         } catch (err)  {
             res.send(responseMessage.LEAGUE.CREATE_FAIL);
             transaction.rollback();
@@ -74,7 +75,6 @@ module.exports = function(app) {
             leagueId: leagueId
         }
     */
-
     app.post('/api/accept-league-invitation', jsonParser, async function (req, res) {
 
         const league = await League.findById(req.body.leagueId).exec();
@@ -85,17 +85,20 @@ module.exports = function(app) {
             return;
         }
         user.invitations.splice(user.invitations.indexOf(league._id), 1);
-        user.leagues.push(league._id);
+        user.leagues.push({ leagueId: league._id, name: league.name });
         league.invitations.splice(league.invitations.indexOf(user._id));
-        league.players.push({ id: user._id, name: user.username });
-
+        league.players.push({ id: user._id, name: user.username }); 
+        league.seasons.find(season => season.isCurrent).standings.push({ id: user._id.toString(), name: user.username, score: 0 })
+        
         const transaction = new Transaction(true);
+        league.markModified('seasons')
         transaction.insert(schemas.LEAGUE, league);
         transaction.insert(schemas.USER, user);
 
         try {
             await transaction.run();
-            res.send(responseMessage.LEAGUE.JOIN_SUCCESS);
+            res.json(user)
+            // res.send(responseMessage.LEAGUE.JOIN_SUCCESS);
         } catch (err)  {
             res.send(responseMessage.LEAGUE.JOIN_FAIL);
             transaction.rollback();
@@ -166,7 +169,7 @@ module.exports = function(app) {
             res.send(responseMessage.LEAGUE.NO_INVITATION_RIGHT);
         } else {
             league.invitations.push(invitedUser._id);
-            invitedUser.invitations.push(league._id);
+            invitedUser.invitations.push({ leagueId: league._id, name: league.name });
             const transaction = new Transaction(true);
             transaction.insert(schemas.LEAGUE, league);
             transaction.insert(schemas.USER, invitedUser);
