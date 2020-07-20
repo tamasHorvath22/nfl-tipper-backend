@@ -8,18 +8,18 @@ const mailgun = new Mailgun({
 });
 
 module.exports = function (userData, mailType) {
-    const mailTemplate = mailTemplates[mailTemplates.GET_PRE + mailType]();
-    const data = {
-        from: mailTemplates.CREDENTIALS.SENDER,
-        to: userData.email,
-        subject: mailTemplate.subject,
-        html: getTemplate(mailTemplate.path, userData)
-    }
+  const mailTemplate = mailTemplates[mailTemplates.GET_PRE + mailType]();
+  const data = {
+    from: mailTemplates.CREDENTIALS.SENDER,
+    to: userData.emailAddress,
+    subject: mailTemplate.subject,
+    html: getTemplate(mailTemplate.path, userData)
+  }
 
-    mailgun.messages().send(data, function(err, body) {
-        if (err) { throw err }
-        else {
-            console.log(body);
-        }
-    })
+  mailgun.messages().send(data, function(err, body) {
+    if (err) { throw err }
+    else {
+      console.log(body);
+    }
+  })
 }

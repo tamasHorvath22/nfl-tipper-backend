@@ -3,5 +3,6 @@ module.exports = Object.freeze({
     LEAGUE: 'League',
     SEASON: 'Season',
     WEEK: 'Week',
-    GAME: 'Game'
+    GAME: 'Game',
+    CONFIRM_EMAIL: 'ConfirmEmail'
 })
