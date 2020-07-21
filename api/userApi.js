@@ -3,6 +3,7 @@ module.exports = function(app) {
     const bodyParser = require('body-parser');
     const User = require('../models/userModel');
     const EmailConfirm = require('../models/confirmEmailModel');
+    const ForgotPassword = require('../models/forgotPasswordModel');
     const jsonParser = bodyParser.json();
     const bcrypt = require('bcrypt');
     const jwt = require('jsonwebtoken');
@@ -97,7 +98,7 @@ module.exports = function(app) {
           url: `${process.env.UI_BASE_URL}${process.env.CONFIRM_EMAIL_URL}/${emailConfirm._id}`
         }
 
-        // sendEmail(userEmilData, mailType.EMAIL_CONFIRM); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
+        sendEmail(userEmilData, mailType.EMAIL_CONFIRM); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
 
         res.send(responseMessage.USER.SUCCESSFUL_REGISTRATION);
       } catch (err)  {
@@ -114,101 +115,195 @@ module.exports = function(app) {
       };
     });
 
-    app.get('/confirm-email/:hash', async function (req, res) {
-      let confirmModel = null
+    /* 
+      request: 
+      { 
+        email: email
+      }
+    */
+    app.post('/reset-password', jsonParser, async function (req, res) {
+      let user;
       try {
-        confirmModel = await EmailConfirm.findById(req.params.hash).exec();
+        user = await User.findOne({ email: req.body.email}).exec();
       } catch (err) {
-        res.send(responseMessage.USER.NO_EMAIL_HASH_FOUND);
+        res.send(responseMessage.USER.NOT_FOUND)
         return;
       }
-
-      let user = null
-      try {
-        user = await User.findById(confirmModel.userId).exec();
-        user.isEmailConfirmed = true
-      } catch (err) {
-        res.send(responseMessage.USER.NOT_FOUND);
-        return;
-      }
-      
+      const forgotPassword = ForgotPassword({
+        email: req.body.email
+      })
       const transaction = new Transaction(true);
-      transaction.remove(schemas.CONFIRM_EMAIL, confirmModel)
-      transaction.insert(schemas.USER, user);
-
+      transaction.insert(schemas.FORGOT_PASSWORD, forgotPassword);
       try {
         await transaction.run();
-        res.send(responseMessage.USER.EMAIL_CONFIRMED);
+        const userEmilData = {
+          emailAddress: req.body.email,
+          username: user.username,
+          url: `${process.env.UI_BASE_URL}${process.env.RESET_PASSWORD_URL}/${forgotPassword._id}`
+        }
+
+        sendEmail(userEmilData, mailType.FORGOT_PASSWORD); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
+
+        res.send(responseMessage.USER.RESET_PASSWORD_EMAIL_SENT);
       } catch (err)  {
-        res.send(responseMessage.USER.EMAIL_CONFIRM_FAIL);
         transaction.rollback();
+        res.send(responseMessage.USER.RESET_PASSWORD_EMAIL_FAIL);
       };
     });
 
-    app.post('/api/user/change', jsonParser, function (req, res) {
-      User.findOne({ username: req.body.username }, function(err, user) {
-        if (err) {
-          res.send(responseMessage.USER.ERROR);
-          return;
-        };
-        user.avatarUrl = req.body.avatarUrl;
-        user.save();
-        res.json(user);
-      });
-    });
-
     /* 
-        request: 
-        { 
-            oldPassword: oldPassword,
-            newPassword: newPassword
-        }
+      request: 
+      { 
+        hash: hash
+        password: password
+      }
     */
-    app.post('/api/change-pass', jsonParser, function (req, res) {
-      User.findOne({ username: req.decoded.username }, function(err, user) {
-        if (err) {
-          res.send(responseMessage.USER.WRONG_USERNAME_OR_PASSWORD);
+   app.post('/new-password', jsonParser, async function (req, res) {  // /check-pass-token
+    let user;
+    let forgotPassword;
+
+    try {
+      forgotPassword = await ForgotPassword.findById(req.body.hash).exec();
+    } catch (err) {
+      res.send(responseMessage.COMMON.ERROR)
+      return;
+    }
+    try {
+      user = await User.findOne({ email: forgotPassword.email}).exec();
+    } catch (err) {
+      res.send(responseMessage.USER.NOT_FOUND)
+      return;
+    }
+    user.password = req.body.password;
+    const transaction = new Transaction(true);
+    transaction.insert(schemas.USER, user);
+    transaction.remove(schemas.FORGOT_PASSWORD, forgotPassword)
+    
+    try {
+      await transaction.run();
+      res.send(responseMessage.USER.RESET_PASSWORD_SUCCESS);
+    } catch (err)  {
+      transaction.rollback();
+      res.send(responseMessage.USER.RESET_PASSWORD_FAIL);
+    };
+  });
+
+  /* 
+    request: 
+    { 
+      hash: hash
+    }
+  */
+   app.post('/check-pass-token', jsonParser, async function (req, res) {
+    let forgotPassword;
+    try {
+      forgotPassword = await ForgotPassword.findById(req.body.hash).exec();
+      console.log(forgotPassword)
+      if (!forgotPassword) {
+        res.send(responseMessage.USER.NO_HASH_FOUND)
+      }
+      res.send(responseMessage.USER.HASH_FOUND)
+    } catch (err) {
+      res.send(responseMessage.USER.NO_HASH_FOUND)
+      return;
+    }
+  });
+
+  app.get('/confirm-email/:hash', async function (req, res) {
+    let confirmModel = null
+    try {
+      confirmModel = await EmailConfirm.findById(req.params.hash).exec();
+    } catch (err) {
+      res.send(responseMessage.USER.NO_EMAIL_HASH_FOUND);
+      return;
+    }
+
+    let user = null
+    try {
+      user = await User.findById(confirmModel.userId).exec();
+      user.isEmailConfirmed = true
+    } catch (err) {
+      res.send(responseMessage.USER.NOT_FOUND);
+      return;
+    }
+    
+    const transaction = new Transaction(true);
+    transaction.remove(schemas.CONFIRM_EMAIL, confirmModel)
+    transaction.insert(schemas.USER, user);
+
+    try {
+      await transaction.run();
+      res.send(responseMessage.USER.EMAIL_CONFIRMED);
+    } catch (err)  {
+      res.send(responseMessage.USER.EMAIL_CONFIRM_FAIL);
+      transaction.rollback();
+    };
+  });
+
+  app.post('/api/user/change', jsonParser, function (req, res) {
+    User.findOne({ username: req.body.username }, function(err, user) {
+      if (err) {
+        res.send(responseMessage.USER.ERROR);
+        return;
+      };
+      user.avatarUrl = req.body.avatarUrl;
+      user.save();
+      res.json(user);
+    });
+  });
+
+  /* 
+      request: 
+      { 
+          oldPassword: oldPassword,
+          newPassword: newPassword
+      }
+  */
+  app.post('/api/change-pass', jsonParser, function (req, res) {
+    User.findOne({ username: req.decoded.username }, function(err, user) {
+      if (err) {
+        res.send(responseMessage.USER.WRONG_USERNAME_OR_PASSWORD);
+        return;
+      };
+      bcrypt.compare(req.body.oldPassword, user.password, function(error, authenticated) {
+        if (error) {
+          console.log(error)
+          res.send(responseMessage.USER.AUTHENTICATION_ERROR);
           return;
         };
-        bcrypt.compare(req.body.oldPassword, user.password, function(error, authenticated) {
-          if (error) {
-            console.log(error)
-            res.send(responseMessage.USER.AUTHENTICATION_ERROR);
-            return;
-          };
-          if (authenticated) {
-            user.password = req.body.newPassword;
-            user.save();
-            const userObj = {
-              username: user.username,
-              userId: user._id,
-              userEmail: user.email
-            }
-            jwt.sign(userObj, config.getJwtPrivateKey(), function(tokenError, token) {
-              if (tokenError) {
-                res.send(responseMessage.USER.TOKEN_CREATE_ERROR);
-                return;
-              };
-              res.json({ token: token });
-            });
-            // res.send(responseMessage.USER.PASSWORD_CHANGE_SUCCESS);
-          } else {
-            res.send(responseMessage.USER.WRONG_USERNAME_OR_PASSWORD);
+        if (authenticated) {
+          user.password = req.body.newPassword;
+          user.save();
+          const userObj = {
+            username: user.username,
+            userId: user._id,
+            userEmail: user.email
           }
-        })
-      });
-    });
-
-    /* 
-        no data needed, user returned from token data
-    */
-    app.post('/api/get-user', jsonParser, function (req, res) {
-      User.findOne({ username: req.decoded.username }, function (err, user) {
-        if (err) { 
-          res.send(responseMessage.USER.NOT_FOUND);
-          return;
+          jwt.sign(userObj, config.getJwtPrivateKey(), function(tokenError, token) {
+            if (tokenError) {
+              res.send(responseMessage.USER.TOKEN_CREATE_ERROR);
+              return;
+            };
+            res.json({ token: token });
+          });
+          // res.send(responseMessage.USER.PASSWORD_CHANGE_SUCCESS);
+        } else {
+          res.send(responseMessage.USER.WRONG_USERNAME_OR_PASSWORD);
         }
-        res.json(user)
       })
+    });
+  });
+
+  /* 
+      no data needed, user returned from token data
+  */
+  app.post('/api/get-user', jsonParser, function (req, res) {
+    User.findOne({ username: req.decoded.username }, function (err, user) {
+      if (err) { 
+        res.send(responseMessage.USER.NOT_FOUND);
+        return;
+      }
+      res.json(user)
     })
+  })
 }

@@ -24,6 +24,16 @@ module.exports = Object.freeze({
       subject: this.EMAIL_CONFIRM.SUBJECT
     };
   },
+  FORGOT_PASSWORD: {
+    SUBJECT: 'Reset yout password',
+    TEMPLATE_PATH: 'forgot-password-template.html' 
+  },
+  GET_FORGOT_PASSWORD: function() {
+    return {
+      path: this.BASE_TEMPLATE_PATH + this.FORGOT_PASSWORD.TEMPLATE_PATH,
+      subject: this.FORGOT_PASSWORD.SUBJECT
+    };
+  },
   LEAGUE_INVITE: {
     SUBJECT: 'League invitation',
     TEMPLATE_PATH: 'league-invitation-template.html' 

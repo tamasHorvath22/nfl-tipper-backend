@@ -4,5 +4,6 @@ module.exports = Object.freeze({
     SEASON: 'Season',
     WEEK: 'Week',
     GAME: 'Game',
-    CONFIRM_EMAIL: 'ConfirmEmail'
+    CONFIRM_EMAIL: 'ConfirmEmail',
+    FORGOT_PASSWORD: 'ForgotPassword'
 })
