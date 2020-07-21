@@ -92,7 +92,7 @@ module.exports = function(app) {
       try {
         await transaction.run();
         const userEmilData = {
-          email: user.emailAddress,
+          emailAddress: user.emailAddress,
           username: user.username,
           url: `${process.env.UI_BASE_URL}${process.env.CONFIRM_EMAIL_URL}/${emailConfirm._id}`
         }
