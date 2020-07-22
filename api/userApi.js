@@ -23,15 +23,9 @@ module.exports = function(app) {
             password: password
         }
     */
-    app.post('/login', jsonParser, (req, res) => {
-        
-      // sendEmail(userData, mailType.REGISTRATION); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
-
-      User.findOne({ username: req.body.username }, function(err, user) {
-        if (err) {
-          res.send(responseMessage.USER.ERROR);
-          return;
-        };
+    app.post('/login', jsonParser, async (req, res) => {
+      try {
+        user = await User.findOne({ username: req.body.username}).exec();
         if (!user) {
           res.send(responseMessage.USER.WRONG_USERNAME_OR_PASSWORD);
           return;
@@ -46,12 +40,7 @@ module.exports = function(app) {
             return;
           }
           if (authenticated) {
-            const userObj = {
-              username: user.username,
-              userId: user._id,
-              userEmail: user.email
-            }
-            jwt.sign(userObj, config.getJwtPrivateKey(), function(tokenError, token) {
+            jwt.sign(getUserToToken(user), config.getJwtPrivateKey(), function(tokenError, token) {
               if (tokenError) {
                 res.send(responseMessage.USER.TOKEN_CREATE_ERROR);
                 return;
@@ -62,8 +51,18 @@ module.exports = function(app) {
             res.send(responseMessage.USER.WRONG_USERNAME_OR_PASSWORD);
           }
         })
-      });
+      } catch (err) {
+        res.send(responseMessage.USER.ERROR);
+      }
     });
+
+    function getUserToToken(user) {
+      return {
+        username: user.username,
+        userId: user._id,
+        userEmail: user.email
+      }
+    }
 
     /* 
       request: 
@@ -79,7 +78,9 @@ module.exports = function(app) {
         password: req.body.password,
         email: req.body.email,
         leagues: [],
-        avatarUrl: null
+        invitations: [],
+        avatarUrl: null,
+        isEmailConfirmed: false
       });
 
       const emailConfirm = EmailConfirm({
@@ -93,7 +94,7 @@ module.exports = function(app) {
       try {
         await transaction.run();
         const userEmilData = {
-          emailAddress: user.emailAddress,
+          emailAddress: 'tompa22@gmail.com', // user.emailAddress,
           username: user.username,
           url: `${process.env.UI_BASE_URL}${process.env.CONFIRM_EMAIL_URL}/${emailConfirm._id}`
         }
@@ -125,6 +126,10 @@ module.exports = function(app) {
       let user;
       try {
         user = await User.findOne({ email: req.body.email}).exec();
+        if (!user) {
+          res.send(responseMessage.USER.NOT_FOUND);
+          return;
+        }
       } catch (err) {
         res.send(responseMessage.USER.NOT_FOUND)
         return;
@@ -164,12 +169,16 @@ module.exports = function(app) {
 
     try {
       forgotPassword = await ForgotPassword.findById(req.body.hash).exec();
+      if (!forgotPassword) {
+        res.send(responseMessage.FORGET_PASSWORD.NO_REQUEST_FOUND);
+        return;
+      }
     } catch (err) {
       res.send(responseMessage.COMMON.ERROR)
       return;
     }
     try {
-      user = await User.findOne({ email: forgotPassword.email}).exec();
+      user = await User.findOne({ email: forgotPassword.email }).exec();
     } catch (err) {
       res.send(responseMessage.USER.NOT_FOUND)
       return;
@@ -201,6 +210,7 @@ module.exports = function(app) {
       console.log(forgotPassword)
       if (!forgotPassword) {
         res.send(responseMessage.USER.NO_HASH_FOUND)
+        return;
       }
       res.send(responseMessage.USER.HASH_FOUND)
     } catch (err) {
@@ -213,6 +223,10 @@ module.exports = function(app) {
     let confirmModel = null
     try {
       confirmModel = await EmailConfirm.findById(req.params.hash).exec();
+      if (!confirmModel) {
+        res.send(responseMessage.USER.NO_EMAIL_HASH_FOUND);
+        return;
+      }
     } catch (err) {
       res.send(responseMessage.USER.NO_EMAIL_HASH_FOUND);
       return;
@@ -221,6 +235,9 @@ module.exports = function(app) {
     let user = null
     try {
       user = await User.findById(confirmModel.userId).exec();
+      if (!user) {
+        res.send(responseMessage.USER.NOT_FOUND);
+      }
       user.isEmailConfirmed = true
     } catch (err) {
       res.send(responseMessage.USER.NOT_FOUND);
@@ -259,12 +276,14 @@ module.exports = function(app) {
           newPassword: newPassword
       }
   */
-  app.post('/api/change-pass', jsonParser, function (req, res) {
-    User.findOne({ username: req.decoded.username }, function(err, user) {
-      if (err) {
-        res.send(responseMessage.USER.WRONG_USERNAME_OR_PASSWORD);
+  app.post('/api/change-pass', jsonParser, async function (req, res) {
+    let user;
+    try {
+      user = await User.findOne({ username: req.decoded.username }).exec();
+      if (!user) {
+        res.send(responseMessage.USER.NOT_FOUND);
         return;
-      };
+      }
       bcrypt.compare(req.body.oldPassword, user.password, function(error, authenticated) {
         if (error) {
           console.log(error)
@@ -274,36 +293,37 @@ module.exports = function(app) {
         if (authenticated) {
           user.password = req.body.newPassword;
           user.save();
-          const userObj = {
-            username: user.username,
-            userId: user._id,
-            userEmail: user.email
-          }
-          jwt.sign(userObj, config.getJwtPrivateKey(), function(tokenError, token) {
+          
+          jwt.sign(getUserToToken(user), config.getJwtPrivateKey(), function(tokenError, token) {
             if (tokenError) {
               res.send(responseMessage.USER.TOKEN_CREATE_ERROR);
               return;
             };
             res.json({ token: token });
           });
-          // res.send(responseMessage.USER.PASSWORD_CHANGE_SUCCESS);
         } else {
           res.send(responseMessage.USER.WRONG_USERNAME_OR_PASSWORD);
         }
       })
-    });
+    } catch (err) {
+      res.send(responseMessage.USER.NOT_FOUND);
+    }
   });
 
   /* 
       no data needed, user returned from token data
   */
-  app.post('/api/get-user', jsonParser, function (req, res) {
-    User.findOne({ username: req.decoded.username }, function (err, user) {
-      if (err) { 
+  app.post('/api/get-user', jsonParser, async function (req, res) {
+    let user;
+    try {
+      user = await User.findOne({ username: req.decoded.username }).exec();
+      if (!user) {
         res.send(responseMessage.USER.NOT_FOUND);
         return;
       }
       res.json(user)
-    })
+    } catch (err) {
+      res.send(responseMessage.USER.NOT_FOUND);
+    }
   })
 }

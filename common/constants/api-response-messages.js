@@ -25,6 +25,9 @@ module.exports = Object.freeze({
     NO_HASH_FOUND: 'NO_HASH_FOUND',
     HASH_FOUND: 'HASH_FOUND'
   },
+  FORGET_PASSWORD: {
+    NO_REQUEST_FOUND: 'NO_REQUEST_FOUND'
+  },
   COMMON: {
     NO_CHANGES_MADE: 'NO_CHANGES_MADE',
     ERROR: 'ERROR'
