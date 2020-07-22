@@ -30,7 +30,17 @@ module.exports = function(app) {
   */
   app.post('/api/league', jsonParser, async function (req, res) {
     const currentYear = new Date().getFullYear();
-    const user = await User.findById(req.decoded.userId).exec();
+    let user;
+    try {
+      user = await User.findById(req.decoded.userId).exec();
+      if (!user) {
+        res.send(responseMessage.USER.NOT_FOUND);
+        return;
+      }
+    } catch (err) {
+      res.send(responseMessage.USER.NOT_FOUND);
+      return;
+    }
 
     let league = League({
       name: req.body.name,
@@ -60,10 +70,9 @@ module.exports = function(app) {
     try {
       await transaction.run();
       res.json(user)
-      // res.send(responseMessage.LEAGUE.CREATE_SUCCESS);
     } catch (err)  {
-      res.send(responseMessage.LEAGUE.CREATE_FAIL);
       transaction.rollback();
+      res.send(responseMessage.LEAGUE.CREATE_FAIL);
     };
   });
 
@@ -74,9 +83,29 @@ module.exports = function(app) {
     }
   */
   app.post('/api/accept-league-invitation', jsonParser, async function (req, res) {
+    let league;
+    let user;
+    try {
+      league = await League.findById(req.body.leagueId).exec();
+      if (!league) {
+        res.send(responseMessage.LEAGUE.LEAGUES_NOT_FOUND);
+        return;
+      }
+    } catch (err) {
+      res.send(responseMessage.LEAGUE.LEAGUES_NOT_FOUND);
+      return;
+    }
 
-    const league = await League.findById(req.body.leagueId).exec();
-    const user = await User.findById(req.decoded.userId).exec();
+    try {
+      user = await User.findById(req.decoded.userId).exec();
+      if (!user) {
+        res.send(responseMessage.USER.NOT_FOUND);
+        return;
+      }
+    } catch (err) {
+      res.send(responseMessage.USER.NOT_FOUND);
+      return;
+    }
 
     if (!league.invitations.includes(user._id)) {
       res.send(responseMessage.LEAGUE.USER_NOT_INVITED);
@@ -135,7 +164,13 @@ module.exports = function(app) {
     }
   */
   app.post('/api/get-league', jsonParser, async (req, res) => {
-    const league = await League.findById(req.body.leagueId).exec();
+    let league;
+    try {
+      league = await League.findById(req.body.leagueId).exec();
+    } catch (err) {
+      res.send(responseMessage.LEAGUE.NOT_FOUND);
+      return;
+    }
     if (!league) {
       res.send(responseMessage.LEAGUE.NOT_FOUND);
     } else {
@@ -151,13 +186,35 @@ module.exports = function(app) {
     }
   */
   app.post('/api/league/invite', jsonParser, async function (req, res) {
-
-    const league = await League.findById(req.body.leagueId).exec();
-    const invitedUser = await User.findOne({ email: req.body.invitedEmail }).exec();
-    if (!invitedUser) {
-      res.send(responseMessage.USER.NO_EMAIL_FOUND);
+    let league;
+    let invitedUser;
+    try {
+      league = await League.findById(req.body.leagueId).exec();
+      if (!league) {
+        res.send(responseMessage.LEAGUE.LEAGUES_NOT_FOUND);
+        return;
+      }
+    } catch (err) {
+      res.send(responseMessage.COMMON.ERROR);
       return;
     }
+
+    try {
+      invitedUser = await User.findOne({ email: req.body.invitedEmail }).exec();
+      if (!invitedUser) {
+        res.send(responseMessage.USER.NO_EMAIL_FOUND);
+        return;
+      }
+    } catch (err) {
+      res.send(responseMessage.COMMON.ERROR);
+      return;
+    }
+
+    if (league.players.find(user => user.id === invitedUser._id)) {
+      res.send(responseMessage.LEAGUE.USER_ALREADY_IN_LEAGUE);
+      return;
+    }
+    
     if (league.invitations.includes(invitedUser._id) || invitedUser.invitations.includes(league._id)) {
       res.send(responseMessage.LEAGUE.USER_ALREADY_INVITED);
       return;

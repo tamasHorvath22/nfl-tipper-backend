@@ -94,9 +94,9 @@ module.exports = function(app) {
       try {
         await transaction.run();
         const userEmilData = {
-          emailAddress: 'tompa22@gmail.com', // user.emailAddress,
-          username: user.username,
-          url: `${process.env.UI_BASE_URL}${process.env.CONFIRM_EMAIL_URL}/${emailConfirm._id}`
+          $emailAddress: 'tompa22@gmail.com', // user.emailAddress,
+          $username: user.username,
+          $url: `${process.env.UI_BASE_URL}${process.env.CONFIRM_EMAIL_URL}/${emailConfirm._id}`
         }
 
         sendEmail(userEmilData, mailType.EMAIL_CONFIRM); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
@@ -142,9 +142,9 @@ module.exports = function(app) {
       try {
         await transaction.run();
         const userEmilData = {
-          emailAddress: req.body.email,
-          username: user.username,
-          url: `${process.env.UI_BASE_URL}${process.env.RESET_PASSWORD_URL}/${forgotPassword._id}`
+          $emailAddress: req.body.email,
+          $username: user.username,
+          $url: `${process.env.UI_BASE_URL}${process.env.RESET_PASSWORD_URL}/${forgotPassword._id}`
         }
 
         sendEmail(userEmilData, mailType.FORGOT_PASSWORD); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
