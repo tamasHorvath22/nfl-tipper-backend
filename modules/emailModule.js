@@ -11,7 +11,7 @@ module.exports = function (userData, mailType) {
   const mailTemplate = mailTemplates[mailTemplates.GET_PRE + mailType]();
   const data = {
     from: mailTemplates.CREDENTIALS.SENDER,
-    to: userData.emailAddress,
+    to: userData.$emailAddress,
     subject: mailTemplate.subject,
     html: getTemplate(mailTemplate.path, userData)
   }

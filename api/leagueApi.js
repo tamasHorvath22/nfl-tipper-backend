@@ -210,7 +210,8 @@ module.exports = function(app) {
       return;
     }
 
-    if (league.players.find(user => user.id === invitedUser._id)) {
+    // TODO strange, id did not work, find out why
+    if (league.players.find(user => user.name === invitedUser.username)) {
       res.send(responseMessage.LEAGUE.USER_ALREADY_IN_LEAGUE);
       return;
     }
