@@ -1,4 +1,3 @@
-const responseMessage = require('../common/constants/api-response-messages');
 const User = require('../models/userModel');
 
 module.exports = {

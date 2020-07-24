@@ -1,13 +1,9 @@
-const userDoc = require('../persistence/user-doc');
+const bodyParser = require('body-parser');
+const jsonParser = bodyParser.json();
+const UserService = require('../services/user-service');
 
 module.exports = function(app) {
 
-  const bodyParser = require('body-parser');
-  const User = require('../models/userModel');
-  const jsonParser = bodyParser.json();
-  const UserService = require('../services/user-service');
-
-  const userData = { username: 'Sztányi Adrienn', emailAddress: 'tompa22@gmail.com', inviter: 'Tamas Horvath', leagueName: 'leagueNam1', applyLink: '444.hu' }
 
   /* 
     request: 
