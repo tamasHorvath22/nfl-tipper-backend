@@ -33,7 +33,7 @@ module.exports = function(app) {
     }
   */
   app.post('/api/get-leagues', jsonParser, async (req, res) => {
-    res.send(await LeagueService.getLeagues(req.body.leagueIds));
+    res.send(await LeagueService.getLeagueNames(req.body.leagueIds));
   });
 
   /* 

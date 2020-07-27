@@ -9,7 +9,7 @@ const schemas = require('../common/constants/schemas');
 
 module.exports = {
   createLeague: createLeague,
-  getLeagues: getLeagues,
+  getLeagueNames: getLeagueNames,
   getLeague: getLeague,
   sendInvitation: sendInvitation,
   acceptInvitaion: acceptInvitaion
@@ -61,8 +61,8 @@ async function createLeague(creator, leagueData) {
   };
 }
 
-async function getLeagues(idList) {
-  return await LeagueDoc.getLeagues(idList);
+async function getLeagueNames(idList) {
+  return await LeagueDoc.getLeagueNames(idList);
 }
 
 async function getLeague(id) {

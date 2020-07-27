@@ -1,4 +1,4 @@
 module.exports = Object.freeze({
-    UPCOMING: 'UPCOMING',
-    OVER: 'OVER'
+  SCHEDULED: 'scheduled',
+  CLOSED: 'closed'
 })

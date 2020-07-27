@@ -2,11 +2,12 @@ const League = require('../models/leagueModel');
 const mongoose = require('mongoose');
 
 module.exports = {
-  getLeagues: getLeagues,
-  getLeagueById: getLeagueById
+  getLeagueNames: getLeagueNames,
+  getLeagueById: getLeagueById,
+  getAllLeagues: getAllLeagues
 }
 
-async function getLeagues(idList) {
+async function getLeagueNames(idList) {
   let idArray = []
   idList.forEach(league => {
     idArray.push(mongoose.Types.ObjectId(league))
@@ -26,4 +27,8 @@ async function getLeagues(idList) {
 
 async function getLeagueById(id) {
   return await League.findById(id).exec();
+}
+
+async function getAllLeagues() {
+  return await League.find();
 }
