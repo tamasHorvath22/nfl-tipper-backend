@@ -6,13 +6,16 @@ const Transaction = require('mongoose-transactions');
 const UserDoc = require('../persistence/user-doc');
 const LeagueDoc = require('../persistence/league-doc');
 const schemas = require('../common/constants/schemas');
+const mongoose = require('mongoose');
 
 module.exports = {
   createLeague: createLeague,
   getLeagueNames: getLeagueNames,
   getLeague: getLeague,
   sendInvitation: sendInvitation,
-  acceptInvitaion: acceptInvitaion
+  acceptInvitaion: acceptInvitaion,
+  getSeasonData: getSeasonData,
+  saveWeekBets: saveWeekBets
 }
 
 async function createLeague(creator, leagueData) {
@@ -171,5 +174,66 @@ async function acceptInvitaion(invitedUserId, leagueId) {
   } catch (err)  {
     transaction.rollback();
     return responseMessage.LEAGUE.JOIN_FAIL;
+  };
+};
+
+async function getSeasonData(userId, leagueId) {
+  let league;
+  try {
+    league = await LeagueDoc.getLeagueById(leagueId);
+    if (!league) {
+      return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+    }
+  } catch (err) {
+    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+  }
+  const currentYear = new Date().getFullYear()
+  const currentSeason = league.seasons.find(season => season.year === currentYear);
+
+  const lastWeek = currentSeason.weeks[currentSeason.weeks.length - 1];
+  if (!lastWeek.isOpen) {
+    return currentSeason;
+  }
+
+  // const week = currentSeason.weeks.find(week => week.number === data.weekNumber);
+  lastWeek.games.forEach(game => {
+    console.log(game.bets);
+    const userBet = game.bets.find(bet => bet.id.equals(userId));
+    console.log(userBet);
+    game.bets = [userBet];
+  })
+  return currentSeason
+};
+
+async function saveWeekBets(userId, leagueId, incomingWeek) {
+  let league;
+  try {
+    league = await LeagueDoc.getLeagueById(leagueId);
+    if (!league) {
+      return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+    }
+  } catch (err) {
+    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+  }
+
+  const currentYear = new Date().getFullYear()
+  const currentSeason = league.seasons.find(season => season.year === currentYear);
+  const currentWeek = currentSeason.weeks.find(weekToFind => weekToFind._id.equals(incomingWeek._id));
+  currentWeek.games.forEach(game => {
+    const betToSave = game.bets.find(bet => bet.id.equals(userId));
+    const incomingGame = incomingWeek.games.find(incGame => mongoose.Types.ObjectId(incGame._id).equals(mongoose.Types.ObjectId(game._id)));
+    betToSave.bet = incomingGame.bets.find(bet => bet.id === userId).bet;
+  })
+  
+  const transaction = new Transaction(true);
+  league.markModified('seasons')
+  transaction.insert(schemas.LEAGUE, league);
+
+  try {
+    await transaction.run();
+    return responseMessage.LEAGUE.BET_SAVE_SUCCESS;
+  } catch (err)  {
+    transaction.rollback();
+    return responseMessage.LEAGUE.BET_SAVE_FAIL;
   };
 };

@@ -60,6 +60,27 @@ module.exports = function(app) {
   /* 
     request: 
     { 
+      leagueId: leagueId
+    }
+  */
+  app.post('/api/league/get-season', jsonParser, async function (req, res) {
+    res.send(await LeagueService.getSeasonData(req.decoded.userId, req.body.leagueId));
+  });
+
+  /* 
+    request: 
+    { 
+      leagueId: leagueId
+      week: week
+    }
+  */
+  app.post('/api/league/save-week-bets', jsonParser, async function (req, res) {
+    res.send(await LeagueService.saveWeekBets(req.decoded.userId, req.body.leagueId, req.body.week));
+  });
+
+  /* 
+    request: 
+    { 
       leagueId: leagueId,
       invitedEmail: invitedEmail
     }

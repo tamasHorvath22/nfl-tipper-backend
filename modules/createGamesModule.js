@@ -12,7 +12,7 @@ module.exports = function () {
 }
 
 async function getWeekData() {
-  const week = 1
+  const week = 2
   const path = `https://api.sportradar.us/nfl/official/trial/v5/en/games/2020/REG/${week}/schedule.json?api_key=${process.env.SPORTRADAR_KEY}`
   const weekData = await axios.get(path);
   return weekData.data;
