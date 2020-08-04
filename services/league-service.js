@@ -197,9 +197,7 @@ async function getSeasonData(userId, leagueId) {
 
   // const week = currentSeason.weeks.find(week => week.number === data.weekNumber);
   lastWeek.games.forEach(game => {
-    console.log(game.bets);
     const userBet = game.bets.find(bet => bet.id.equals(userId));
-    console.log(userBet);
     game.bets = [userBet];
   })
   return currentSeason

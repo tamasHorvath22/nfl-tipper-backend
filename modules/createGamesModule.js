@@ -6,14 +6,18 @@ const WeekModel = require('../models/weekModel');
 const gameStatus = require('../common/constants/game-status');
 const Transaction = require('mongoose-transactions');
 const schemas = require('../common/constants/schemas');
+const ScheduleService = require('../services/schedule-service');
 
 module.exports = function () {  
   createNewWeekAndGames()
 }
 
+const baseApiUrl = 'https://api.sportradar.us/nfl/official/trial/v5/en/games/2020/REG/';
+const apiKeyPart = '/schedule.json?api_key='
+
 async function getWeekData() {
-  const week = 2
-  const path = `https://api.sportradar.us/nfl/official/trial/v5/en/games/2020/REG/${week}/schedule.json?api_key=${process.env.SPORTRADAR_KEY}`
+  const week = 1;
+  const path = `${baseApiUrl}${week}${apiKeyPart}${process.env.SPORTRADAR_KEY}`
   const weekData = await axios.get(path);
   return weekData.data;
 }
@@ -50,6 +54,8 @@ async function createNewWeekAndGames() {
         awayScore: null,
         startTime: game.scheduled,
         isOpen: true,
+        winner: null,
+        winnerTeamAlias: null,
         bets: []
       })
       league.players.forEach(player => {
@@ -57,12 +63,16 @@ async function createNewWeekAndGames() {
       })
       week.games.push(newGame);
     })
+
     currentSeason.weeks.push(week);
     league.markModified('seasons')
     transaction.insert(schemas.LEAGUE, league);
   })
+
+  
   try {
-    transaction.run();
+    await transaction.run();
+    ScheduleService.setBetEndings();
   } catch (err) {
     transaction.rollback();
     console.log(err);

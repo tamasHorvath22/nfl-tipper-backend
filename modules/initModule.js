@@ -5,5 +5,5 @@ module.exports = function () {
 
   // TODO comment back if goes to live
 
-  // initgame();
+  initgame();
 }

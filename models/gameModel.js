@@ -15,6 +15,8 @@ let gameSchema = new Schema({
     weekNo: Number,
     startTime: Date,
     isOpen: Boolean,
+    winner: String,
+    winnerTeamAlias: String,
     bets: []
 }, { timestamps: true });
 
