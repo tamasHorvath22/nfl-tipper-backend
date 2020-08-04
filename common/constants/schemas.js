@@ -5,5 +5,7 @@ module.exports = Object.freeze({
     WEEK: 'Week',
     GAME: 'Game',
     CONFIRM_EMAIL: 'ConfirmEmail',
-    FORGOT_PASSWORD: 'ForgotPassword'
+    FORGOT_PASSWORD: 'ForgotPassword',
+    BET: 'Bet',
+    WEEK_TRACKER: 'WeekTracker'
 })

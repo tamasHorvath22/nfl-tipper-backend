@@ -6,6 +6,7 @@ const Transaction = require('mongoose-transactions');
 const UserDoc = require('../persistence/user-doc');
 const LeagueDoc = require('../persistence/league-doc');
 const schemas = require('../common/constants/schemas');
+const GameService = require('../services/game-service');
 const mongoose = require('mongoose');
 
 module.exports = {
@@ -57,6 +58,7 @@ async function createLeague(creator, leagueData) {
 
   try {
     await transaction.run();
+    GameService.createNewWeekForLeague(league._id);
     return user;
   } catch (err)  {
     transaction.rollback();

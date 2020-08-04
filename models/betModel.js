@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const schemas = require('../common/constants/schemas');
 const Schema = mongoose.Schema;
 
 let betSchema = new Schema({
@@ -8,4 +9,4 @@ let betSchema = new Schema({
     teamToWin: { type : String }
 }, { timestamps: true });
 
-module.exports = mongoose.model('Bet', betSchema);
+module.exports = mongoose.model(schemas.BET, betSchema);

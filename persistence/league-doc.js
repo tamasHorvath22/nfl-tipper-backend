@@ -4,7 +4,8 @@ const mongoose = require('mongoose');
 module.exports = {
   getLeagueNames: getLeagueNames,
   getLeagueById: getLeagueById,
-  getAllLeagues: getAllLeagues
+  getAllLeagues: getAllLeagues,
+  getLeague: getLeague
 }
 
 async function getLeagueNames(idList) {
@@ -31,4 +32,8 @@ async function getLeagueById(id) {
 
 async function getAllLeagues() {
   return await League.find();
+}
+
+async function getLeague(leagueId) {
+  return await League.findById(leagueId);
 }
