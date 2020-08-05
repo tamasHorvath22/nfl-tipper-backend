@@ -19,7 +19,8 @@ module.exports = {
   checkPassToken: checkPassToken,
   confirmEmail: confirmEmail,
   changePassword :changePassword,
-  getUser: getUser
+  getUser: getUser,
+  changeUserData: changeUserData
 }
 
 async function login(userDto) {
@@ -53,6 +54,9 @@ async function login(userDto) {
 }
 
 async function register(userDto) {
+  if (userDto.username[0] === '$') {
+    return responseMessage.USER.USERNAME_TAKEN;
+  }
   const user = User({
     username: userDto.username,
     password: userDto.password,
@@ -254,6 +258,32 @@ async function getUser(username) {
   } catch (err) {
     return responseMessage.USER.NOT_FOUND;
   }
+}
+
+async function changeUserData(userId, avatarUrl) {
+  let user;
+  try {
+    user = await UserDoc.getUserById(userId);
+    console.log(user);
+    if (!user) {
+      return responseMessage.USER.NOT_FOUND;
+    }
+  } catch (err) {
+    return responseMessage.USER.NOT_FOUND;
+  }
+
+  user.avatarUrl = avatarUrl;
+  const transaction = new Transaction(true);
+  transaction.insert(schemas.USER, user);
+
+  try {
+    await transaction.run();
+    return user;
+  } catch (err)  {
+    transaction.rollback();
+    return responseMessage.USER.MODIFY_FAIL;
+  };
+
 }
 
 function getUserToToken(user) {

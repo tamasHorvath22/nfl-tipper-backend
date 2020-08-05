@@ -4,7 +4,6 @@ const UserService = require('../services/user-service');
 
 module.exports = function(app) {
 
-
   /* 
     request: 
     { 
@@ -64,34 +63,27 @@ module.exports = function(app) {
   });
 
   /* 
-      request: 
-      { 
-          oldPassword: oldPassword,
-          newPassword: newPassword
-      }
+    request: 
+    { 
+      oldPassword: oldPassword,
+      newPassword: newPassword
+    }
   */
   app.post('/api/change-pass', jsonParser, async function (req, res) {
     res.send(await UserService.changePassword(req.decoded.username, req.body));
   });
 
   /* 
-      no data needed, user returned from token data
+    no data needed, user returned from token data
   */
   app.post('/api/get-user', jsonParser, async function (req, res) {
     res.send(await UserService.getUser(req.decoded.username));
   })
 
-  // TODO find out if this endpoint is needed
-
-  // app.post('/api/user/change', jsonParser, function (req, res) {
-  //   User.findOne({ username: req.body.username }, function(err, user) {
-  //     if (err) {
-  //       res.send(responseMessage.USER.ERROR);
-  //       return;
-  //     };
-  //     user.avatarUrl = req.body.avatarUrl;
-  //     user.save();
-  //     res.json(user);
-  //   });
-  // });
+  /* 
+    request: user object
+  */
+  app.post('/api/user/change', jsonParser, async function (req, res) {
+    res.send(await UserService.changeUserData(req.decoded.userId, req.body.avatarUrl));
+  });
 }

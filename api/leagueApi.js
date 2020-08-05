@@ -85,27 +85,27 @@ module.exports = function(app) {
       invitedEmail: invitedEmail
     }
   */
-  app.post('/api/league/delete-invite', jsonParser, async function (req, res) {
+  // app.post('/api/league/delete-invite', jsonParser, async function (req, res) {
 
-    const league = await League.findById(req.body.leagueId).exec();
-    const invitedUser = await User.findOne({ email: req.body.invitedEmail }).exec();
+  //   const league = await League.findById(req.body.leagueId).exec();
+  //   const invitedUser = await User.findOne({ email: req.body.invitedEmail }).exec();
 
-    if (req.decoded.userId !== league.creator) {
-      res.send(responseMessage.LEAGUE.NO_INVITATION_RIGHT);
-    } else {
-      league.invitations.splice(league.invitations.indexOf(invitedUser._id), 1);
-      invitedUser.invitations.splice(invitedUser.invitations.indexOf(league._id));
-      const transaction = new Transaction(true);
-      transaction.insert(schemas.LEAGUE, league);
-      transaction.insert(schemas.USER, invitedUser);
-      try {
-        await transaction.run();
-        // sendEmail();
-        res.send(responseMessage.LEAGUE.INVITATION_DELETE_SUCCESS);
-      } catch (err)  {
-        res.send(responseMessage.LEAGUE.INVITATION_DELETE_FAIL);
-        transaction.rollback();
-      };
-    }
-  });
+  //   if (req.decoded.userId !== league.creator) {
+  //     res.send(responseMessage.LEAGUE.NO_INVITATION_RIGHT);
+  //   } else {
+  //     league.invitations.splice(league.invitations.indexOf(invitedUser._id), 1);
+  //     invitedUser.invitations.splice(invitedUser.invitations.indexOf(league._id));
+  //     const transaction = new Transaction(true);
+  //     transaction.insert(schemas.LEAGUE, league);
+  //     transaction.insert(schemas.USER, invitedUser);
+  //     try {
+  //       await transaction.run();
+  //       // sendEmail();
+  //       res.send(responseMessage.LEAGUE.INVITATION_DELETE_SUCCESS);
+  //     } catch (err)  {
+  //       res.send(responseMessage.LEAGUE.INVITATION_DELETE_FAIL);
+  //       transaction.rollback();
+  //     };
+  //   }
+  // });
 }
