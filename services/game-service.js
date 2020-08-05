@@ -5,11 +5,13 @@ const WeekModel = require('../models/weekModel');
 const gameStatus = require('../common/constants/game-status');
 const Transaction = require('mongoose-transactions');
 const schemas = require('../common/constants/schemas');
+const winnerTeam = require('../common/constants/team');
 const WeekTrackerDoc = require('../persistence/week-tracker-doc');
 
 module.exports = {
   createNewWeekForLeague: createNewWeekForLeague,
-  createNewWeekAndGames: createNewWeekAndGames
+  createNewWeekAndGames: createNewWeekAndGames,
+  evaluateWeek: evaluateWeek
 }
 
 async function getWeekData() {
@@ -69,7 +71,6 @@ async function createNewWeekAndGames() {
     await transaction.run();
   } catch (err) {
     transaction.rollback();
-    console.log(err);
   }
 }
 
@@ -118,6 +119,55 @@ async function createNewWeekForLeague(leagueId) {
     await transaction.run();
   } catch (err) {
     transaction.rollback();
-    console.log(err);
   }
+}
+
+async function evaluateWeek() {
+  const leagues = await LeagueDoc.getAllLeagues();
+  const weekResults = await getWeekData();
+  const transaction = new Transaction(true);
+  
+  leagues.forEach(league => {
+    resultObject = {};
+    league.players.forEach(player => {
+      resultObject[player.id] = 0;
+    })
+    const currentSeason = league.seasons.find(season => season.year === weekResults.year);
+    const currWeek = currentSeason.weeks.find(week => week.weekId === weekResults.week.id);
+
+    weekResults.week.games.forEach(gameResult => {
+      const gameToEvaluate = currWeek.games.find(game => game.gameId === gameResult.id);
+      const scoring = gameResult.scoring;
+      gameToEvaluate.status = gameResult.status;
+      gameToEvaluate.homeScore = scoring.home_points;
+      gameToEvaluate.awayScore = scoring.away_points;
+      if (gameToEvaluate.homeScore > gameToEvaluate.awayScore) {
+        gameToEvaluate.winner = winnerTeam.HOME;
+        gameToEvaluate.winnerTeamAlias = gameToEvaluate.homeTeamAlias;
+      } else if (gameToEvaluate.homeScore < gameToEvaluate.awayScore) {
+        gameToEvaluate.winner = winnerTeam.AWAY;
+        gameToEvaluate.winnerTeamAlias = gameToEvaluate.awayTeamAlias;
+      } else {
+        gameToEvaluate.winner = winnerTeam.TIE;
+      }
+      gameToEvaluate.bets.forEach(bet => {
+        if (bet.bet === gameToEvaluate.winner) {
+          resultObject[bet.id]++;
+        }
+      })
+    })
+    currentSeason.standings.forEach(standing => {
+      standing.score += resultObject[standing.id];
+    })
+
+    league.markModified('seasons')
+    transaction.insert(schemas.LEAGUE, league);
+  })
+
+  try {
+    await transaction.run();
+  } catch (err) {
+    await transaction.rollback();
+  }
+
 }

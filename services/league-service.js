@@ -33,14 +33,17 @@ async function createLeague(creator, leagueData) {
 
   let league = League({
     name: leagueData.name,
-    creator: user.userId,
+    creator: creator.userId,
     invitations: [],
     players: [{ id: user._id, name: user.username }],
     seasons: [
       Season({
-        year: currentYear,
-        numberOfSeason: currentYear - 1919,
-        numberOfSuperBowl: currentYear - 1965,
+        // TODO remove previous year (-1)
+        year: currentYear - 1,
+        // TODO remove previous year (-1)
+        numberOfSeason: currentYear - 1 - 1919,
+        // TODO remove previous year (-1)
+        numberOfSuperBowl: currentYear - 1 - 1965,
         weeks: [],
         standings: [{ id: user._id, name: user.username, score: 0 }],
         isOver: false,
@@ -80,8 +83,6 @@ async function getLeague(id) {
   if (!league) {
     return responseMessage.LEAGUE.NOT_FOUND;
   } else {
-    console.log(league);
-
     return league;
   }
 }
@@ -162,8 +163,15 @@ async function acceptInvitaion(invitedUserId, leagueId) {
   user.invitations.splice(user.invitations.indexOf(league._id), 1);
   user.leagues.push({ leagueId: league._id, name: league.name });
   league.invitations.splice(league.invitations.indexOf(user._id));
-  league.players.push({ id: user._id, name: user.username }); 
-  league.seasons.find(season => season.isCurrent).standings.push({ id: user._id.toString(), name: user.username, score: 0 })
+  league.players.push({ id: user._id, name: user.username });
+  const currentSeason = league.seasons.find(season => season.isCurrent);
+  currentSeason.standings.push({ id: user._id.toString(), name: user.username, score: 0 })
+  if (currentSeason.weeks.length) {
+    const currentWeek = currentSeason.weeks.find(week => week.isOpen);
+    currentWeek.games.forEach(game => {
+      game.bets.push({ id: user._id, name: user.username, bet: null });
+    })
+  }
   
   const transaction = new Transaction(true);
   league.markModified('seasons')
@@ -189,7 +197,8 @@ async function getSeasonData(userId, leagueId) {
   } catch (err) {
     return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
   }
-  const currentYear = new Date().getFullYear()
+  // TODO remove previous year (-1)
+  const currentYear = new Date().getFullYear() - 1;
   const currentSeason = league.seasons.find(season => season.year === currentYear);
 
   const lastWeek = currentSeason.weeks[currentSeason.weeks.length - 1];
@@ -215,14 +224,19 @@ async function saveWeekBets(userId, leagueId, incomingWeek) {
   } catch (err) {
     return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
   }
-
-  const currentYear = new Date().getFullYear()
+  // TODO remove previous year (-1)
+  const currentYear = new Date().getFullYear() - 1;
   const currentSeason = league.seasons.find(season => season.year === currentYear);
   const currentWeek = currentSeason.weeks.find(weekToFind => weekToFind._id.equals(incomingWeek._id));
+  const currentTime = new Date().getTime();
+
   currentWeek.games.forEach(game => {
     const betToSave = game.bets.find(bet => bet.id.equals(userId));
     const incomingGame = incomingWeek.games.find(incGame => mongoose.Types.ObjectId(incGame._id).equals(mongoose.Types.ObjectId(game._id)));
     betToSave.bet = incomingGame.bets.find(bet => bet.id === userId).bet;
+    // TODO put back the code inside this commented if statement
+    // if (new Date(game.startTime).getTime() > currentTime) {
+    // }
   })
   
   const transaction = new Transaction(true);

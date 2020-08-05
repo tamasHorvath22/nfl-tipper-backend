@@ -13,7 +13,8 @@ module.exports = {
 
 async function setBetEndings() {
   const leagues = await LeagueDoc.getAllLeagues();
-  const currentYear = new Date().getFullYear()
+  // TODO remove previous year (-1)
+  const currentYear = new Date().getFullYear() - 1;
   const currentSeason = leagues[0].seasons.find(season => season.year === currentYear);
   const startTimes = new Set()
   currentSeason.weeks[currentSeason.weeks.length - 1].games.forEach(game => {
@@ -50,11 +51,8 @@ async function setBetEndings() {
 
       try {
         await transaction.run();
-        console.log('save success')
       } catch (err)  {
         transaction.rollback();
-        console.log('some error happened')
-        console.log(err);
       };
     }.bind(await LeagueDoc.getAllLeagues())); 
   }
@@ -63,11 +61,14 @@ async function setBetEndings() {
 async function closeWeek() {
   const scheduleTime = '05 11 * * 2';
 
-  schedule.scheduleJob(scheduleTime, async function() {
+  const tempTrigger = '21 * * * *';
+
+  schedule.scheduleJob(tempTrigger, async function() {
     const transaction = new Transaction(true);
 
     this.forEach(league => {
-      const currentYear = new Date().getFullYear();
+      // TODO remove previous year (-1)
+      const currentYear = new Date().getFullYear() - 1;
       const currentSeason = league.seasons.find(season => season.year === currentYear);
       const currentWeek = currentSeason.weeks[currentSeason.weeks.length - 1];
       currentWeek.isOpen = false;
@@ -78,6 +79,7 @@ async function closeWeek() {
 
     try {
       await transaction.run();
+      await GameService.evaluateWeek();
       stepWeekTracker();
     } catch (err)  {
       transaction.rollback();
@@ -87,6 +89,10 @@ async function closeWeek() {
 
 async function stepWeekTracker() {
   const weekTracker = await WeekTrackerDoc.getTracker();
+  console.log('------------------------------------------')
+  console.log(weekTracker)
+  console.log('------------------------------------')
+
 
   if (weekTracker.regOrPst === regOrPst.REGULAR && weekTracker.week === 17) {
     weekTracker.week = 1;
@@ -98,6 +104,7 @@ async function stepWeekTracker() {
   } else {
     weekTracker.week++;
   }
+  console.log(weekTracker)
 
   const transaction = new Transaction(true);
   transaction.insert(schemas.WEEK_TRACKER, weekTracker);
@@ -106,7 +113,10 @@ async function stepWeekTracker() {
     await transaction.run();
     await GameService.createNewWeekAndGames();
     await setBetEndings();
+    console.log('week tracker save success')
   } catch (err)  {
+    console.log('week tracker save fail!!!!!!!!!!!!')
+    console.log(err)
     await transaction.rollback();
   };
 }
