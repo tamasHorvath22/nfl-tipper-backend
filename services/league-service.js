@@ -61,7 +61,7 @@ async function createLeague(creator, leagueData) {
 
   try {
     await transaction.run();
-    GameService.createNewWeekForLeague(league._id);
+    await GameService.createNewWeekForLeague(league._id);
     return user;
   } catch (err)  {
     transaction.rollback();
@@ -201,9 +201,12 @@ async function getSeasonData(userId, leagueId) {
   const currentYear = new Date().getFullYear() - 1;
   const currentSeason = league.seasons.find(season => season.year === currentYear);
 
-  const lastWeek = currentSeason.weeks[currentSeason.weeks.length - 1];
-  if (!lastWeek.isOpen) {
-    return currentSeason;
+  let lastWeek;
+  if (currentSeason.weeks.length) {
+    lastWeek = currentSeason.weeks[currentSeason.weeks.length - 1];
+    if (!lastWeek.isOpen) {
+      return currentSeason;
+    }
   }
 
   // const week = currentSeason.weeks.find(week => week.number === data.weekNumber);
