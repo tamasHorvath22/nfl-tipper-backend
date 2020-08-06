@@ -7,7 +7,7 @@ const mailgun = new Mailgun({
     host: process.env.MAILGUN_EU_HOST
 });
 
-module.exports = function (userData, mailType) {
+module.exports = async function (userData, mailType) {
   const mailTemplate = mailTemplates[mailTemplates.GET_PRE + mailType]();
   const data = {
     from: mailTemplates.CREDENTIALS.SENDER,
@@ -16,15 +16,20 @@ module.exports = function (userData, mailType) {
     html: getTemplate(mailTemplate.path, userData)
   }
 
-  let result;
-  mailgun.messages().send(data, function(err, body) {
-    if (err) {
-      console.log(err);
-      result = false;
-    }
-    else {
-      result = true;
-    }
-  })
-  return result;
+  try {
+    await mailgun.messages().send(data);
+    return true;
+  } catch (err) {
+    console.log(err);
+    return false;
+  }
+  // mailgun.messages().send(data, function(err, body) {
+  //   if (err) {
+  //     result = false;
+  //   }
+  //   else {
+  //     result = true;
+  //   }
+  // })
+  // return result;
 }

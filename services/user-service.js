@@ -84,6 +84,7 @@ async function register(userDto) {
     }
 
     const result = sendEmail(userEmilData, mailType.EMAIL_CONFIRM); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
+    console.log('email result:');
     console.log(result);
     if (!result) {
       return responseMessage.USER.EMAIL_TAKEN;
