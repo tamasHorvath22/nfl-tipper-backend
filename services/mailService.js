@@ -31,7 +31,7 @@ async function send(userData, mailType) {
 }
 
 async function validateEmailAddress(email) {
-  const result = mailgun.validate(email);
+  const result = await mailgun.validate(email);
   console.log(result);
   if (result && result.is_valid) {
     return true;
