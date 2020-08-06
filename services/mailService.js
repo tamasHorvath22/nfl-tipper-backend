@@ -9,8 +9,7 @@ const mailgun = new Mailgun({
 });
 
 module.exports = {
-  send: send,
-  validateEmailAddress: validateEmailAddress
+  send: send
 }
 
 async function send(userData, mailType) {
@@ -28,13 +27,4 @@ async function send(userData, mailType) {
     console.log(err);
     return responseMessage.EMAIL.SEND_FAIL;
   }
-}
-
-async function validateEmailAddress(email) {
-  const result = await mailgun.validate(email);
-  console.log(result);
-  if (result && result.is_valid) {
-    return true;
-  }
-  return false;
 }

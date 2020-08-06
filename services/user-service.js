@@ -75,19 +75,8 @@ async function register(userDto) {
   transaction.insert(schemas.CONFIRM_EMAIL, emailConfirm);
   transaction.insert(schemas.USER, user);
 
-  const isMailValid = await MailService.validateEmailAddress(user.email);
-  if (!isMailValid) {
-    return responseMessage.EMAIL.NOT_VALID;
-  }
-
   try {
     await transaction.run();
-    const userEmilData = {
-      $emailAddress: user.email,
-      $username: user.username,
-      $url: `${process.env.UI_BASE_URL}${process.env.CONFIRM_EMAIL_URL}/${emailConfirm._id}`
-    }
-    await MailService.send(userEmilData, mailType.EMAIL_CONFIRM); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
   } catch (err)  {
     transaction.rollback();
     let source;
@@ -100,6 +89,13 @@ async function register(userDto) {
     }
     return source;
   };
+  const userEmilData = {
+    $emailAddress: user.email,
+    $username: user.username,
+    $url: `${process.env.UI_BASE_URL}${process.env.CONFIRM_EMAIL_URL}/${emailConfirm._id}`
+  }
+  // await MailService.send(userEmilData, mailType.EMAIL_CONFIRM); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
+  return responseMessage.USER.SUCCESSFUL_REGISTRATION;
 }
 
 async function resetPassword(email) {
@@ -115,11 +111,6 @@ async function resetPassword(email) {
   const forgotPassword = ForgotPassword({
     email: email
   })
-
-  const isMailValid = await MailService.validateEmailAddress(email);
-  if (!isMailValid) {
-    return responseMessage.EMAIL.NOT_VALID;
-  }
   
   const transaction = new Transaction(true);
   transaction.insert(schemas.FORGOT_PASSWORD, forgotPassword);
@@ -131,7 +122,7 @@ async function resetPassword(email) {
       $url: `${process.env.UI_BASE_URL}${process.env.RESET_PASSWORD_URL}/${forgotPassword._id}`
     }
 
-    await MailService.send(userEmailData, mailType.FORGOT_PASSWORD); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
+    // await MailService.send(userEmailData, mailType.FORGOT_PASSWORD); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
 
     return responseMessage.USER.RESET_PASSWORD_EMAIL_SENT;
   } catch (err)  {
