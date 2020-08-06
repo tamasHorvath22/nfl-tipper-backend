@@ -75,7 +75,9 @@ async function register(userDto) {
   transaction.insert(schemas.CONFIRM_EMAIL, emailConfirm);
   transaction.insert(schemas.USER, user);
 
-  const isMailValid = MailService.validateEmailAddress(user.email);
+  const isMailValid = await MailService.validateEmailAddress(user.email);
+  console.log('is mail valid: ');
+  console.log(isMailValid);
   if (!isMailValid) {
     return responseMessage.EMAIL.NOT_VALID;
   }
