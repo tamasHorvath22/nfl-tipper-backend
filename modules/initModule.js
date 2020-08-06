@@ -12,6 +12,7 @@ module.exports = function () {
   // new deploy
 
   // TODO set the starting tracker year to current year
+
   // let weekTracker = WeekTrackerModel({
   //   year: 2019,
   //   week: 1,

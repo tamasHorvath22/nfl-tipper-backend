@@ -5,7 +5,7 @@ module.exports = {
   getTracker: getTracker
 }
 
-const trackerId = '5f2bcee4b5c9b365eaf3c9fe'
+const trackerId = '5f2bd8ea2ca8937155072e46'
 
 async function getTracker() {
   return await WeekTracker.findById(trackerId).exec();

@@ -70,7 +70,7 @@ async function createNewWeekAndGames() {
   try {
     await transaction.run();
   } catch (err) {
-    transaction.rollback();
+    await transaction.rollback();
   }
 }
 
