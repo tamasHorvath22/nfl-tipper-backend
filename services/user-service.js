@@ -78,7 +78,7 @@ async function register(userDto) {
   try {
     await transaction.run();
     const userEmilData = {
-      $emailAddress: user.emailAddress,
+      $emailAddress: user.email,
       $username: user.username,
       $url: `${process.env.UI_BASE_URL}${process.env.CONFIRM_EMAIL_URL}/${emailConfirm._id}`
     }
@@ -264,7 +264,6 @@ async function changeUserData(userId, avatarUrl) {
   let user;
   try {
     user = await UserDoc.getUserById(userId);
-    console.log(user);
     if (!user) {
       return responseMessage.USER.NOT_FOUND;
     }

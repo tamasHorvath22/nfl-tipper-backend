@@ -89,10 +89,6 @@ async function closeWeek() {
 
 async function stepWeekTracker() {
   const weekTracker = await WeekTrackerDoc.getTracker();
-  console.log('------------------------------------------')
-  console.log(weekTracker)
-  console.log('------------------------------------')
-
 
   if (weekTracker.regOrPst === regOrPst.REGULAR && weekTracker.week === 17) {
     weekTracker.week = 1;
@@ -104,7 +100,6 @@ async function stepWeekTracker() {
   } else {
     weekTracker.week++;
   }
-  console.log(weekTracker)
 
   const transaction = new Transaction(true);
   transaction.insert(schemas.WEEK_TRACKER, weekTracker);
@@ -113,10 +108,7 @@ async function stepWeekTracker() {
     await transaction.run();
     await GameService.createNewWeekAndGames();
     await setBetEndings();
-    console.log('week tracker save success')
   } catch (err)  {
-    console.log('week tracker save fail!!!!!!!!!!!!')
-    console.log(err)
     await transaction.rollback();
   };
 }

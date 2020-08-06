@@ -4,12 +4,12 @@ const regOrPst = require('../common/constants/regular-or-postseason')
 const ScheduleService = require('../services/schedule-service');
 
 module.exports = function () {
-  console.log('init module')
   ScheduleService.closeWeek();
 
   // TODO comment back if goes to live
 
   // initgame();
+  // new deploy
 
   // TODO set the starting tracker year to current year
   // let weekTracker = WeekTrackerModel({
