@@ -83,7 +83,11 @@ async function register(userDto) {
       $url: `${process.env.UI_BASE_URL}${process.env.CONFIRM_EMAIL_URL}/${emailConfirm._id}`
     }
 
-    sendEmail(userEmilData, mailType.EMAIL_CONFIRM); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
+    const result = sendEmail(userEmilData, mailType.EMAIL_CONFIRM); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
+    console.log(result);
+    if (!result) {
+      return responseMessage.USER.EMAIL_TAKEN;
+    }
 
     return responseMessage.USER.SUCCESSFUL_REGISTRATION;
   } catch (err)  {
@@ -123,7 +127,10 @@ async function resetPassword(email) {
       $url: `${process.env.UI_BASE_URL}${process.env.RESET_PASSWORD_URL}/${forgotPassword._id}`
     }
 
-    sendEmail(userEmailData, mailType.FORGOT_PASSWORD); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
+    const result = sendEmail(userEmailData, mailType.FORGOT_PASSWORD); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
+    if(!result) {
+      return responseMessage.USER.RESET_PASSWORD_EMAIL_FAIL;
+    }
 
     return responseMessage.USER.RESET_PASSWORD_EMAIL_SENT;
   } catch (err)  {

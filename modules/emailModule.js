@@ -16,10 +16,15 @@ module.exports = function (userData, mailType) {
     html: getTemplate(mailTemplate.path, userData)
   }
 
+  let result;
   mailgun.messages().send(data, function(err, body) {
-    if (err) { throw err }
+    if (err) {
+      console.log(err);
+      result = false;
+    }
     else {
-      console.log(body);
+      result = true;
     }
   })
+  return result;
 }

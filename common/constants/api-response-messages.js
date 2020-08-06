@@ -72,5 +72,9 @@ module.exports = Object.freeze({
     CREATE_SUCCESS: 'CREATE_SUCCESS',
     UPDATE_SUCCESS: 'UPDATE_SUCCESS',
     UPDATE_FAIL: 'UPDATE_FAIL'
+  },
+  EMAIL: {
+    SEND_SUCCESS: 'SEND_SUCCESS',
+    SEND_FAIL: 'SEND_FAIL'
   }
 })
