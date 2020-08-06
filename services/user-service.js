@@ -83,14 +83,15 @@ async function register(userDto) {
       $url: `${process.env.UI_BASE_URL}${process.env.CONFIRM_EMAIL_URL}/${emailConfirm._id}`
     }
 
-    const result = await sendEmail(userEmilData, mailType.EMAIL_CONFIRM); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
-    console.log('email result:');
-    console.log(result);
-    if (!result) {
-      return responseMessage.USER.EMAIL_TAKEN;
+    const isEmailSuccess = await sendEmail(userEmilData, mailType.EMAIL_CONFIRM); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
+    console.log('is email success:');
+    console.log(isEmailSuccess);
+    if (isEmailSuccess) {
+      return responseMessage.USER.SUCCESSFUL_REGISTRATION;
+    } else {
+      break;
     }
 
-    return responseMessage.USER.SUCCESSFUL_REGISTRATION;
   } catch (err)  {
     transaction.rollback();
     let source;
@@ -103,6 +104,7 @@ async function register(userDto) {
     }
     return source;
   };
+  return responseMessage.EMAIL.NOT_VALID;
 }
 
 async function resetPassword(email) {
