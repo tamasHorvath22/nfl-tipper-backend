@@ -83,7 +83,7 @@ async function register(userDto) {
       $url: `${process.env.UI_BASE_URL}${process.env.CONFIRM_EMAIL_URL}/${emailConfirm._id}`
     }
 
-    const result = sendEmail(userEmilData, mailType.EMAIL_CONFIRM); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
+    const result = await sendEmail(userEmilData, mailType.EMAIL_CONFIRM); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
     console.log('email result:');
     console.log(result);
     if (!result) {
@@ -128,7 +128,7 @@ async function resetPassword(email) {
       $url: `${process.env.UI_BASE_URL}${process.env.RESET_PASSWORD_URL}/${forgotPassword._id}`
     }
 
-    const result = sendEmail(userEmailData, mailType.FORGOT_PASSWORD); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
+    const result = await sendEmail(userEmailData, mailType.FORGOT_PASSWORD); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
     if(!result) {
       return responseMessage.USER.RESET_PASSWORD_EMAIL_FAIL;
     }
