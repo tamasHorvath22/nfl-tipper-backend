@@ -78,7 +78,7 @@ async function register(userDto) {
   try {
     await transaction.run();
     const userEmilData = {
-      $emailAddress: 'tompa22@gmail.com', // user.emailAddress, TODO delete static email address
+      $emailAddress: user.emailAddress,
       $username: user.username,
       $url: `${process.env.UI_BASE_URL}${process.env.CONFIRM_EMAIL_URL}/${emailConfirm._id}`
     }
@@ -118,7 +118,7 @@ async function resetPassword(email) {
   try {
     await transaction.run();
     const userEmailData = {
-      $emailAddress: 'tompa22@gmail.com',  // email,  TODO delete static email address
+      $emailAddress: email,
       $username: user.username,
       $url: `${process.env.UI_BASE_URL}${process.env.RESET_PASSWORD_URL}/${forgotPassword._id}`
     }
