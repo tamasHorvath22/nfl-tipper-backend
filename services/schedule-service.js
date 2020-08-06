@@ -107,11 +107,10 @@ async function stepWeekTracker() {
   try {
     await transaction.run();
     console.log('week tracker save success')
-    await GameService.createNewWeekAndGames();
     // await setBetEndings();
-    console.log('week tracker try branch success')
   } catch (err)  {
     await transaction.rollback();
     console.log('week tracker error')
   };
+  await GameService.createNewWeekAndGames();
 }
