@@ -61,15 +61,14 @@ async function createLeague(creator, leagueData) {
 
   try {
     await transaction.run();
-    console.log('league create success, before save')
-    await GameService.createNewWeekForLeague(league._id);
     console.log('league save success')
-    return user;
   } catch (err)  {
     transaction.rollback();
     console.log('league save fail')
     return responseMessage.LEAGUE.CREATE_FAIL;
   };
+  await GameService.createNewWeekForLeague(league._id);
+  return user;
 }
 
 async function getLeagueNames(idList) {
