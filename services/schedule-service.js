@@ -61,7 +61,7 @@ async function setBetEndings() {
 async function closeWeek() {
   const scheduleTime = '05 11 * * 2';
 
-  const tempTrigger = '15 * * * *';
+  const tempTrigger = '28 * * * *';
 
   schedule.scheduleJob(tempTrigger, async function() {
     const transaction = new Transaction(true);
@@ -79,8 +79,11 @@ async function closeWeek() {
 
     try {
       await transaction.run();
+      console.log('week close success');
     } catch (err)  {
       await transaction.rollback();
+      console.log('week close fail');
+      return;
     };
     await GameService.evaluateWeek();
     await stepWeekTracker();
@@ -111,6 +114,7 @@ async function stepWeekTracker() {
   } catch (err)  {
     await transaction.rollback();
     console.log('week tracker error')
+    return;
   };
   await GameService.createNewWeekAndGames();
 }

@@ -75,7 +75,8 @@ async function register(userDto) {
   transaction.insert(schemas.CONFIRM_EMAIL, emailConfirm);
   transaction.insert(schemas.USER, user);
 
-  if (!await MailService.validateEmailAddress(user.email)) {
+  const isMailValid = await MailService.validateEmailAddress(user.email);
+  if (!isMailValid) {
     return responseMessage.EMAIL.NOT_VALID;
   }
 
@@ -115,10 +116,11 @@ async function resetPassword(email) {
     email: email
   })
 
-  if (!await MailService.validateEmailAddress(email)) {
+  const isMailValid = await MailService.validateEmailAddress(email);
+  if (!isMailValid) {
     return responseMessage.EMAIL.NOT_VALID;
   }
-
+  
   const transaction = new Transaction(true);
   transaction.insert(schemas.FORGOT_PASSWORD, forgotPassword);
   try {

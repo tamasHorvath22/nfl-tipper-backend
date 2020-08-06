@@ -31,10 +31,10 @@ async function send(userData, mailType) {
 }
 
 async function validateEmailAddress(email) {
-  mailgun.validate(email, function (err, body) {
-    if(body && body.is_valid) {
-      return true;
-    }
-    return false;
-  });
+  const result = mailgun.validate(email);
+  console.log(result);
+  if (result && result.is_valid) {
+    return true;
+  }
+  return false;
 }
