@@ -128,7 +128,7 @@ async function evaluateWeek() {
   const transaction = new Transaction(true);
   
   leagues.forEach(league => {
-    resultObject = {};
+    const resultObject = {};
     league.players.forEach(player => {
       resultObject[player.id] = 0;
     })

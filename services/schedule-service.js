@@ -61,7 +61,7 @@ async function setBetEndings() {
 async function closeWeek() {
   const scheduleTime = '05 11 * * 2';
 
-  const tempTrigger = '56 * * * *';
+  const tempTrigger = '32 * * * *';
 
   schedule.scheduleJob(tempTrigger, async function() {
     const transaction = new Transaction(true);
@@ -80,9 +80,9 @@ async function closeWeek() {
     try {
       await transaction.run();
       await GameService.evaluateWeek();
-      stepWeekTracker();
+      await stepWeekTracker();
     } catch (err)  {
-      transaction.rollback();
+      await transaction.rollback();
     };
   }.bind(await LeagueDoc.getAllLeagues()))
 }
