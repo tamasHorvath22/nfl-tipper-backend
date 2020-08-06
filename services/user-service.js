@@ -75,10 +75,7 @@ async function register(userDto) {
   transaction.insert(schemas.CONFIRM_EMAIL, emailConfirm);
   transaction.insert(schemas.USER, user);
 
-  const isMailValid = await MailService.validateEmailAddress(user.email);
-  console.log('is mail valid: ');
-  console.log(isMailValid);
-  if (!isMailValid) {
+  if (!await MailService.validateEmailAddress(user.email)) {
     return responseMessage.EMAIL.NOT_VALID;
   }
 
@@ -118,8 +115,7 @@ async function resetPassword(email) {
     email: email
   })
 
-  const isMailValid = MailService.validateEmailAddress(email);
-  if (!isMailValid) {
+  if (!await MailService.validateEmailAddress(email)) {
     return responseMessage.EMAIL.NOT_VALID;
   }
 

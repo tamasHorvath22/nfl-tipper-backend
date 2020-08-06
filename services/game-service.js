@@ -174,8 +174,10 @@ async function evaluateWeek() {
 
   try {
     await transaction.run();
+    console.log('evaluation success');
   } catch (err) {
     await transaction.rollback();
+    console.log('evaluation fail :(');
   }
 
 }

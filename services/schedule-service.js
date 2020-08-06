@@ -61,9 +61,9 @@ async function setBetEndings() {
 async function closeWeek() {
   const scheduleTime = '05 11 * * 2';
 
-  const tempTrigger = '24 * * * *';
+  const tempTrigger = '42 * * * *';
 
-  schedule.scheduleJob(scheduleTime, async function() {
+  schedule.scheduleJob(tempTrigger, async function() {
     const transaction = new Transaction(true);
 
     this.forEach(league => {
