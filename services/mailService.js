@@ -31,12 +31,10 @@ async function send(userData, mailType) {
 }
 
 async function validateEmailAddress(email) {
-  try {
-    await mailgun.validate(email);
-    return true;
-  } catch (err) {
-    console.log('email vaidation: ');
-    console.log(err);
+  mailgun.validate(email, function (err, body) {
+    if(body && body.is_valid) {
+      return true;
+    }
     return false;
-  }
+  });
 }
