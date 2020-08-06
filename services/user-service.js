@@ -7,7 +7,7 @@ const config = require('../config');
 const responseMessage = require('../common/constants/api-response-messages');
 const mailType = require('../common/constants/email-type');
 const schemas = require('../common/constants/schemas');
-const sendEmail = require('../modules/emailModule');
+const MailService = require('../services/mailService');
 const Transaction = require('mongoose-transactions');
 const UserDoc = require('../persistence/user-doc');
 
@@ -75,6 +75,11 @@ async function register(userDto) {
   transaction.insert(schemas.CONFIRM_EMAIL, emailConfirm);
   transaction.insert(schemas.USER, user);
 
+  const isMailValid = MailService.validateEmailAddress(user.email);
+  if (!isMailValid) {
+    return responseMessage.EMAIL.NOT_VALID;
+  }
+
   try {
     await transaction.run();
     const userEmilData = {
@@ -82,16 +87,7 @@ async function register(userDto) {
       $username: user.username,
       $url: `${process.env.UI_BASE_URL}${process.env.CONFIRM_EMAIL_URL}/${emailConfirm._id}`
     }
-
-    const isEmailSuccess = await sendEmail(userEmilData, mailType.EMAIL_CONFIRM); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
-    console.log('is email success:');
-    console.log(isEmailSuccess);
-    if (isEmailSuccess) {
-      return responseMessage.USER.SUCCESSFUL_REGISTRATION;
-    } else {
-      break;
-    }
-
+    await MailService.send(userEmilData, mailType.EMAIL_CONFIRM); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
   } catch (err)  {
     transaction.rollback();
     let source;
@@ -104,7 +100,6 @@ async function register(userDto) {
     }
     return source;
   };
-  return responseMessage.EMAIL.NOT_VALID;
 }
 
 async function resetPassword(email) {
@@ -120,6 +115,12 @@ async function resetPassword(email) {
   const forgotPassword = ForgotPassword({
     email: email
   })
+
+  const isMailValid = MailService.validateEmailAddress(email);
+  if (!isMailValid) {
+    return responseMessage.EMAIL.NOT_VALID;
+  }
+
   const transaction = new Transaction(true);
   transaction.insert(schemas.FORGOT_PASSWORD, forgotPassword);
   try {
@@ -130,10 +131,7 @@ async function resetPassword(email) {
       $url: `${process.env.UI_BASE_URL}${process.env.RESET_PASSWORD_URL}/${forgotPassword._id}`
     }
 
-    const result = await sendEmail(userEmailData, mailType.FORGOT_PASSWORD); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
-    if(!result) {
-      return responseMessage.USER.RESET_PASSWORD_EMAIL_FAIL;
-    }
+    await MailService.send(userEmailData, mailType.FORGOT_PASSWORD); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
 
     return responseMessage.USER.RESET_PASSWORD_EMAIL_SENT;
   } catch (err)  {

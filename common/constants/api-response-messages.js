@@ -76,6 +76,7 @@ module.exports = Object.freeze({
   EMAIL: {
     SEND_SUCCESS: 'SEND_SUCCESS',
     SEND_FAIL: 'SEND_FAIL',
+    VALID: 'VALID',
     NOT_VALID: 'NOT_VALID'
   }
 })

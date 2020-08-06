@@ -1,7 +1,7 @@
 const League = require('../models/leagueModel');
 const Season = require('../models/seasonModel');
 const responseMessage = require('../common/constants/api-response-messages');
-const sendEmail = require('../modules/emailModule');
+const MailService = require('../services/mailService');
 const Transaction = require('mongoose-transactions');
 const UserDoc = require('../persistence/user-doc');
 const LeagueDoc = require('../persistence/league-doc');
@@ -130,7 +130,7 @@ async function sendInvitation(invitorId, inviteData) {
     transaction.insert(schemas.USER, invitedUser);
     try {
       await transaction.run();
-      // sendEmail();
+      // MailService.send()
       return responseMessage.LEAGUE.INVITATION_SUCCESS;
     } catch (err)  {
       transaction.rollback();
