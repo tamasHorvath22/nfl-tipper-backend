@@ -63,7 +63,7 @@ async function closeWeek() {
 
   const tempTrigger = '24 * * * *';
 
-  schedule.scheduleJob(tempTrigger, async function() {
+  schedule.scheduleJob(scheduleTime, async function() {
     const transaction = new Transaction(true);
 
     this.forEach(league => {

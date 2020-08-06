@@ -26,12 +26,16 @@ async function getWeekData() {
 
 async function createNewWeekAndGames() {
   const leagues = await LeagueDoc.getAllLeagues();
+  console.log(leagues)
   const weekData = await getWeekData();
+  console.log(weekData)
   const transaction = new Transaction(true);
 
   leagues.forEach(league => {
+    console.log(league)
     const currentSeason = league.seasons.find(season => season.year === weekData.year);
     if (currentSeason.weeks.find(week => week.weekId === weekData.week.id)) {
+      console.log('van már ilyen hét!!')
       return;
     }
     let week = WeekModel({
@@ -40,7 +44,9 @@ async function createNewWeekAndGames() {
       isOpen: true,
       games: []
     })
+    console.log(week)
     weekData.week.games.forEach(game => {
+      console.log(game)
       let newGame = GameModel({
         gameId: game.id,
         homeTeam: game.home.name,
@@ -69,8 +75,10 @@ async function createNewWeekAndGames() {
 
   try {
     await transaction.run();
+    console.log('new week save success')
   } catch (err) {
     await transaction.rollback();
+    console.log('new week save fail')
   }
 }
 
