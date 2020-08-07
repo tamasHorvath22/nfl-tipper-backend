@@ -17,7 +17,7 @@ module.exports = {
 // }
 
 // TODO remove, for testing
-let minute = 30;
+let minute = 35;
 
 const times = {
   week: `${minute + 0} * * * *`,
@@ -29,9 +29,6 @@ const times = {
 async function scheduleCloseWeek() {
 
   schedule.scheduleJob(times.week, async function() {
-    console.log('shedule test!!!!!!')
-    console.log('timed function triggered');
-    
     const transaction = new Transaction(true);
 
     this.forEach(league => {
@@ -42,7 +39,7 @@ async function scheduleCloseWeek() {
       currentWeek.isOpen = false;
 
       league.markModified('seasons');
-      transaction.update(schemas.LEAGUE, league._id, league, { new: true });
+      transaction.update(schemas.LEAGUE, league._id, league);
     })
 
     try {
