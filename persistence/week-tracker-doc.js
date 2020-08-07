@@ -41,9 +41,9 @@ async function initWeekTracker() {
 async function getTracker() {
   console.log(trackerId);
   try {
-    const tracker = await WeekTracker.findById(trackerId).exec();
+    const tracker = await WeekTracker.find().exec();
     if (tracker) {
-      return tracker;
+      return tracker[0];
     }
     return null;
   } catch (err) {
