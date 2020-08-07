@@ -4,7 +4,7 @@ const regOrPst = require('../common/constants/regular-or-postseason')
 const ScheduleService = require('../services/schedule-service');
 
 module.exports = function () {
-  ScheduleService.closeWeek();
+  await ScheduleService.closeWeek();
 
   // TODO comment back if goes to live
 
