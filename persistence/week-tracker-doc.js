@@ -39,6 +39,7 @@ async function initWeekTracker() {
 }
 
 async function getTracker() {
+  console.log(trackerId);
   try {
     const tracker = await WeekTracker.findById(trackerId).exec();
     if (tracker) {
