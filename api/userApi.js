@@ -12,8 +12,6 @@ module.exports = function(app) {
     }
   */
   app.post('/login', jsonParser, async (req, res) => {
-    console.log('bejön?');
-    console.log(req);
     res.send(await UserService.login(req.body));
   });
 

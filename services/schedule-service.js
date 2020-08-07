@@ -17,7 +17,7 @@ module.exports = {
 // }
 
 // TODO remove, for testing
-let minute = 40;
+let minute = 54;
 
 const times = {
   week: `${minute + 0} * * * *`,
@@ -39,24 +39,17 @@ async function scheduleCloseWeek() {
       currentWeek.isOpen = false;
 
       league.markModified('seasons');
-      league.save(function (err, res) {
-        if (err) {
-          console.log(err);
-        }
-        console.log(res);
-      })
-
-      // transaction.update(schemas.LEAGUE, league._id, league);
+      transaction.update(schemas.LEAGUE, league._id, league);
     })
 
-    // try {
-    //   await transaction.run();
-    //   console.log('week close success');
-    // } catch (err)  {
-    //   await transaction.rollback();
-    //   console.log(err);
-    //   console.log('week close fail');
-    // };
+    try {
+      await transaction.run();
+      console.log('week close success');
+    } catch (err)  {
+      await transaction.rollback();
+      console.log(err);
+      console.log('week close fail');
+    };
   }.bind(await LeagueDoc.getAllLeagues()));
 }
 
