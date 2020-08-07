@@ -28,7 +28,7 @@ const times = {
 
 async function scheduleCloseWeek() {
 
-  schedule.scheduleJob(times.createNewWeek, async function() {
+  schedule.scheduleJob(times.week, async function() {
     console.log('shedule test!!!!!!')
     console.log('timed function triggered');
     
