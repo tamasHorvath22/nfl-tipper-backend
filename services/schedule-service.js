@@ -59,11 +59,14 @@ async function setBetEndings() {
 }
 
 async function closeWeek() {
+  console.log('close week schedule setter called');
   const scheduleTime = '05 11 * * 2';
 
-  const tempTrigger = '37 * * * *';
+  const tempTrigger = '41 * * * *';
 
   schedule.scheduleJob(tempTrigger, async function() {
+    console.log('timed function triggered');
+
     const transaction = new Transaction(true);
 
     this.forEach(league => {
