@@ -28,13 +28,10 @@ async function getWeekData() {
 
 async function createNewWeekAndGames() {
   const leagues = await LeagueDoc.getAllLeagues();
-  console.log(leagues)
   const weekData = await getWeekData();
-  console.log(weekData)
   const transaction = new Transaction(true);
 
   leagues.forEach(league => {
-    console.log(league)
     const currentSeason = league.seasons.find(season => season.year === weekData.year);
     if (currentSeason.weeks.find(week => week.weekId === weekData.week.id)) {
       return;
@@ -45,9 +42,7 @@ async function createNewWeekAndGames() {
       isOpen: true,
       games: []
     })
-    console.log(week)
     weekData.week.games.forEach(game => {
-      console.log(game)
       let newGame = GameModel({
         gameId: game.id,
         homeTeam: game.home.name,

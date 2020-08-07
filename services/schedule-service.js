@@ -8,7 +8,7 @@ module.exports = {
   scheduleAll: scheduleAll
 }
 
-let minute = 22
+let minute = 59
 
 async function scheduleCloseWeek() {
   const scheduleTime = '05 11 * * 2';
