@@ -9,7 +9,7 @@ module.exports = async function () {
   //   message: 'Hello my pretty new logger!!!!!'
   // })
 
-  await ScheduleService.closeWeek();
+  await ScheduleService.scheduleAll();
 
   // TODO comment back if goes to live
 

@@ -40,12 +40,14 @@ async function login(userDto) {
   try {
     authenticated = await bcrypt.compare(userDto.password, user.password);
   } catch (err) {
+    console.log(err);
     return responseMessage.USER.AUTHENTICATION_ERROR;
   }
   if (authenticated) {
     try {
       return { token: jwt.sign(getUserToToken(user), config.getJwtPrivateKey()) };
     } catch (err) {
+      console.log(err);
       return responseMessage.USER.TOKEN_CREATE_ERROR;
     }
   } else {
@@ -78,6 +80,7 @@ async function register(userDto) {
   try {
     await transaction.run();
   } catch (err)  {
+    console.log(err);
     transaction.rollback();
     let source;
     if (err.error.keyPattern.hasOwnProperty('username')) {
@@ -106,6 +109,7 @@ async function resetPassword(email) {
       return responseMessage.USER.NOT_FOUND;
     }
   } catch (err) {
+    console.log(err);
     return responseMessage.USER.NOT_FOUND;
   }
   const forgotPassword = ForgotPassword({
@@ -126,6 +130,7 @@ async function resetPassword(email) {
 
     return responseMessage.USER.RESET_PASSWORD_EMAIL_SENT;
   } catch (err)  {
+    console.log(err);
     transaction.rollback();
     return responseMessage.USER.RESET_PASSWORD_EMAIL_FAIL;
   };
@@ -140,11 +145,13 @@ async function newPassword(data) {
       return responseMessage.FORGET_PASSWORD.NO_REQUEST_FOUND;
     }
   } catch (err) {
+    console.log(err);
     return responseMessage.COMMON.ERROR;
   }
   try {
     user = await UserDoc.getUserByEmail(forgotPassword.email);
   } catch (err) {
+    console.log(err);
     return responseMessage.USER.NOT_FOUND;
   }
   user.password = data.password;
@@ -156,6 +163,7 @@ async function newPassword(data) {
     await transaction.run();
     return responseMessage.USER.RESET_PASSWORD_SUCCESS;
   } catch (err)  {
+    console.log(err);
     transaction.rollback();
     return responseMessage.USER.RESET_PASSWORD_FAIL;
   };
@@ -170,6 +178,7 @@ async function checkPassToken(hash) {
     }
     return responseMessage.USER.HASH_FOUND;
   } catch (err) {
+    console.log(err);
     return responseMessage.USER.NO_HASH_FOUND;
   }
 }
@@ -182,6 +191,7 @@ async function confirmEmail(hash) {
       return responseMessage.USER.NO_EMAIL_HASH_FOUND;
     }
   } catch (err) {
+    console.log(err);
     return responseMessage.USER.NO_EMAIL_HASH_FOUND;
   }
 
@@ -193,6 +203,7 @@ async function confirmEmail(hash) {
     }
     user.isEmailConfirmed = true
   } catch (err) {
+    console.log(err);
     return responseMessage.USER.NOT_FOUND;
   }
   
@@ -204,6 +215,7 @@ async function confirmEmail(hash) {
     await transaction.run();
     return responseMessage.USER.EMAIL_CONFIRMED;
   } catch (err)  {
+    console.log(err);
     transaction.rollback();
     return responseMessage.USER.EMAIL_CONFIRM_FAIL;
   };
@@ -220,6 +232,7 @@ async function changePassword(username, passwords) {
     try {
       authenticated = await bcrypt.compare(passwords.oldPassword, user.password);
     } catch (err) {
+      console.log(err);
       return responseMessage.USER.AUTHENTICATION_ERROR;
     }
     if (authenticated) {
@@ -232,9 +245,11 @@ async function changePassword(username, passwords) {
         try {
           return { token: jwt.sign(getUserToToken(user), config.getJwtPrivateKey()) };
         } catch (err) {
+          console.log(err);
           return responseMessage.USER.TOKEN_CREATE_ERROR;
         }
       } catch (err)  {
+        console.log(err);
         transaction.rollback();
         return responseMessage.USER.RESET_PASSWORD_FAIL;
       };
@@ -242,6 +257,7 @@ async function changePassword(username, passwords) {
       return responseMessage.USER.WRONG_USERNAME_OR_PASSWORD;
     }
   } catch (err) {
+    console.log(err);
     return responseMessage.USER.NOT_FOUND;
   }
 }
@@ -255,6 +271,7 @@ async function getUser(username) {
     }
     return user;
   } catch (err) {
+    console.log(err);
     return responseMessage.USER.NOT_FOUND;
   }
 }
@@ -267,6 +284,7 @@ async function changeUserData(userId, avatarUrl) {
       return responseMessage.USER.NOT_FOUND;
     }
   } catch (err) {
+    console.log(err);
     return responseMessage.USER.NOT_FOUND;
   }
 
@@ -278,6 +296,7 @@ async function changeUserData(userId, avatarUrl) {
     await transaction.run();
     return user;
   } catch (err)  {
+    console.log(err);
     transaction.rollback();
     return responseMessage.USER.MODIFY_FAIL;
   };

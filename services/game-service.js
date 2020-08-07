@@ -7,11 +7,13 @@ const Transaction = require('mongoose-transactions');
 const schemas = require('../common/constants/schemas');
 const winnerTeam = require('../common/constants/team');
 const WeekTrackerDoc = require('../persistence/week-tracker-doc');
+const regOrPst = require('../common/constants/regular-or-postseason');
 
 module.exports = {
   createNewWeekForLeague: createNewWeekForLeague,
   createNewWeekAndGames: createNewWeekAndGames,
-  evaluateWeek: evaluateWeek
+  evaluateWeek: evaluateWeek,
+  stepWeekTracker: stepWeekTracker
 }
 
 async function getWeekData() {
@@ -35,7 +37,6 @@ async function createNewWeekAndGames() {
     console.log(league)
     const currentSeason = league.seasons.find(season => season.year === weekData.year);
     if (currentSeason.weeks.find(week => week.weekId === weekData.week.id)) {
-      console.log('van már ilyen hét!!')
       return;
     }
     let week = WeekModel({
@@ -75,10 +76,9 @@ async function createNewWeekAndGames() {
 
   try {
     await transaction.run();
-    console.log('new week save success')
   } catch (err) {
+    console.log(err);
     await transaction.rollback();
-    console.log('new week save fail')
   }
 }
 
@@ -126,12 +126,12 @@ async function createNewWeekForLeague(leagueId) {
   try {
     await transaction.run();
   } catch (err) {
+    console.log(err);
     transaction.rollback();
   }
 }
 
 async function evaluateWeek() {
-  console.log('evaluate week called');
   const leagues = await LeagueDoc.getAllLeagues();
   const weekResults = await getWeekData();
   const transaction = new Transaction(true);
@@ -175,10 +175,33 @@ async function evaluateWeek() {
 
   try {
     await transaction.run();
-    console.log('evaluation success');
   } catch (err) {
+    console.log(err);
     await transaction.rollback();
-    console.log('evaluation fail :(');
+  }
+}
+
+async function stepWeekTracker() {
+  const weekTracker = await WeekTrackerDoc.getTracker();
+
+  if (weekTracker.regOrPst === regOrPst.REGULAR && weekTracker.week === 17) {
+    weekTracker.week = 1;
+    weekTracker.regOrPst = regOrPst.POSTSEASON;
+  } else if (weekTracker.regOrPst === regOrPst.POSTSEASON && weekTracker.week === 4) {
+    weekTracker.year++;
+    weekTracker.week = 1;
+    weekTracker.regOrPst = regOrPst.REGULAR
+  } else {
+    weekTracker.week++;
   }
 
+  const transaction = new Transaction(true);
+  transaction.insert(schemas.WEEK_TRACKER, weekTracker);
+
+  try {
+    await transaction.run();
+  } catch (err)  {
+    console.log(err);
+    await transaction.rollback();
+  };
 }
