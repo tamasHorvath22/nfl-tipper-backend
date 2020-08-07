@@ -62,7 +62,7 @@ async function closeWeek() {
   console.log('close week schedule setter called');
   const scheduleTime = '05 11 * * 2';
 
-  let minute = 25;
+  let minute = 36;
   const tempTrigger = '08 * * * *';
 
   schedule.scheduleJob(`${minute++} * * * *`, async function() {
