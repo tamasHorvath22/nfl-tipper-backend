@@ -17,7 +17,7 @@ module.exports = {
 // }
 
 // TODO remove, for testing
-let minute = 58;
+let minute = 05;
 
 const times = {
   week: `${minute + 0} * * * *`,
@@ -40,11 +40,11 @@ async function scheduleCloseWeek() {
 
       league.markModified('seasons');
       transaction.insert(schemas.LEAGUE, league);
-      // transaction.update(schemas.LEAGUE, league._id, league);
+      // transaction.update(schemas.LEAGUE, league._id, league, { new: true });
     })
 
     try {
-      await transaction.run();
+      console.log(await transaction.run());
       console.log('week close success');
     } catch (err)  {
       await transaction.rollback();
