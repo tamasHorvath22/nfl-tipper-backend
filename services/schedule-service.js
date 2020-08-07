@@ -8,14 +8,26 @@ module.exports = {
   scheduleAll: scheduleAll
 }
 
-let minute = 59
+// production times
+// const times = {
+//   week: '10 10 * * 2',
+//   evaluateGames: '11 10 * * 2',
+//   stepWeek: '12 10 * * 2',
+//   createNewWeek: '13 10 * * 2'
+// }
+
+// TODO remove, for testing
+const times = {
+  minute: 50,
+  week: `${times.minute++} * * * *`,
+  evaluateGames: `${times.minute++} * * * *`,
+  stepWeek: `${times.minute++} * * * *`,
+  createNewWeek: `${times.minute++} * * * *`
+}
 
 async function scheduleCloseWeek() {
-  const scheduleTime = '10 10 * * 2';
-  const teatScheduleTime = '10 10 * * 5';
-  const tempTrigger = '27 * * * *';
 
-  schedule.scheduleJob(teatScheduleTime, async function() {
+  schedule.scheduleJob(times.createNewWeek, async function() {
     console.log('shedule test!!!!!!')
     console.log('timed function triggered');
     
@@ -44,7 +56,7 @@ async function scheduleCloseWeek() {
 }
 
 function scheduleEvaluateGames() {
-  schedule.scheduleJob(`${minute++} * * * *`, async function() {
+  schedule.scheduleJob(times.evaluateGames, async function() {
     try {
       await GameService.evaluateWeek();
       console.log('week evaluation success');
@@ -56,7 +68,7 @@ function scheduleEvaluateGames() {
 }
 
 function scheduleStepWeek() {
-  schedule.scheduleJob(`${minute++} * * * *`, async function() {
+  schedule.scheduleJob(times.stepWeek, async function() {
     try {
       await GameService.stepWeekTracker();
       console.log('week tracker step success');
@@ -68,7 +80,7 @@ function scheduleStepWeek() {
 }
 
 function scheduleCreateNewWeek() {
-  schedule.scheduleJob(`${minute++} * * * *`, async function() {
+  schedule.scheduleJob(times.createNewWeek, async function() {
     try {
       await GameService.createNewWeekAndGames();
       console.log('new week creation success');
