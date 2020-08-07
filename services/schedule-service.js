@@ -11,8 +11,8 @@ module.exports = {
 let minute = 59
 
 async function scheduleCloseWeek() {
-  const scheduleTime = '05 11 * * 2';
-  const teatScheduleTime = '27 13 * * 5';
+  const scheduleTime = '10 10 * * 2';
+  const teatScheduleTime = '10 10 * * 5';
   const tempTrigger = '27 * * * *';
 
   schedule.scheduleJob(teatScheduleTime, async function() {
