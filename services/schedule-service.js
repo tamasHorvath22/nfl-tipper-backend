@@ -12,9 +12,11 @@ let minute = 59
 
 async function scheduleCloseWeek() {
   const scheduleTime = '05 11 * * 2';
+  const teatScheduleTime = '23 15 * * 5';
   const tempTrigger = '27 * * * *';
 
-  schedule.scheduleJob(`${minute++} * * * *`, async function() {
+  schedule.scheduleJob(teatScheduleTime, async function() {
+    console.log('shedule test!!!!!!')
     console.log('timed function triggered');
     
     const transaction = new Transaction(true);
