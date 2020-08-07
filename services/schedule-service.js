@@ -62,7 +62,7 @@ async function closeWeek() {
   console.log('close week schedule setter called');
   const scheduleTime = '05 11 * * 2';
 
-  const tempTrigger = '47 * * * *';
+  const tempTrigger = '54 * * * *';
 
   schedule.scheduleJob(tempTrigger, async function() {
     console.log('timed function triggered');
@@ -89,11 +89,12 @@ async function closeWeek() {
       return;
     };
     await GameService.evaluateWeek();
-    // await stepWeekTracker();
+    await stepWeekTracker();
   }.bind(await LeagueDoc.getAllLeagues()))
 }
 
 async function stepWeekTracker() {
+  console.log('weektracker called')
   const weekTracker = await WeekTrackerDoc.getTracker();
 
   if (weekTracker.regOrPst === regOrPst.REGULAR && weekTracker.week === 17) {
@@ -119,5 +120,5 @@ async function stepWeekTracker() {
     console.log('week tracker error')
     return;
   };
-  await GameService.createNewWeekAndGames();
+  // await GameService.createNewWeekAndGames();
 }
