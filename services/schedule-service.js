@@ -17,12 +17,13 @@ module.exports = {
 // }
 
 // TODO remove, for testing
+let minute = 10;
+
 const times = {
-  minute: 10,
-  week: `${times.minute++} * * * *`,
-  evaluateGames: `${times.minute++} * * * *`,
-  stepWeek: `${times.minute++} * * * *`,
-  createNewWeek: `${times.minute++} * * * *`
+  week: `${minute + 0} * * * *`,
+  evaluateGames: `${minute + 1} * * * *`,
+  stepWeek: `${minute + 2} * * * *`,
+  createNewWeek: `${minute + 3} * * * *`
 }
 
 async function scheduleCloseWeek() {
