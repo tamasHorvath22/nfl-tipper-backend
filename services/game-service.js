@@ -131,6 +131,7 @@ async function createNewWeekForLeague(leagueId) {
 }
 
 async function evaluateWeek() {
+  console.log('evaluate week called');
   const leagues = await LeagueDoc.getAllLeagues();
   const weekResults = await getWeekData();
   const transaction = new Transaction(true);

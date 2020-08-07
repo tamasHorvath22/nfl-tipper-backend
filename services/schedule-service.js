@@ -62,7 +62,7 @@ async function closeWeek() {
   console.log('close week schedule setter called');
   const scheduleTime = '05 11 * * 2';
 
-  const tempTrigger = '41 * * * *';
+  const tempTrigger = '47 * * * *';
 
   schedule.scheduleJob(tempTrigger, async function() {
     console.log('timed function triggered');
@@ -88,7 +88,7 @@ async function closeWeek() {
       console.log('week close fail');
       return;
     };
-    // await GameService.evaluateWeek();
+    await GameService.evaluateWeek();
     // await stepWeekTracker();
   }.bind(await LeagueDoc.getAllLeagues()))
 }
