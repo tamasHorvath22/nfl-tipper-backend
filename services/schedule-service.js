@@ -18,7 +18,7 @@ module.exports = {
 
 // TODO remove, for testing
 const times = {
-  minute: 50,
+  minute: 10,
   week: `${times.minute++} * * * *`,
   evaluateGames: `${times.minute++} * * * *`,
   stepWeek: `${times.minute++} * * * *`,
