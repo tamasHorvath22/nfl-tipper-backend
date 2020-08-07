@@ -12,7 +12,7 @@ let minute = 59
 
 async function scheduleCloseWeek() {
   const scheduleTime = '05 11 * * 2';
-  const teatScheduleTime = '23 15 * * 5';
+  const teatScheduleTime = '27 13 * * 5';
   const tempTrigger = '27 * * * *';
 
   schedule.scheduleJob(teatScheduleTime, async function() {
