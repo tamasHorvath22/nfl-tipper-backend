@@ -17,7 +17,7 @@ module.exports = {
 // }
 
 // TODO remove, for testing
-let minute = 57;
+let minute = 10;
 
 const times = {
   week: `${minute + 0} * * * *`,
@@ -39,8 +39,8 @@ async function scheduleCloseWeek() {
       currentWeek.isOpen = false;
 
       league.markModified('seasons');
-      transaction.insert(schemas.LEAGUE, league);
-      // transaction.update(schemas.LEAGUE, league._id, league, { new: true });
+      // transaction.insert(schemas.LEAGUE, league);
+      transaction.update(schemas.LEAGUE, league._id, league, { new: true });
     })
 
     try {

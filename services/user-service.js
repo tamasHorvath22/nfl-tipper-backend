@@ -97,7 +97,7 @@ async function register(userDto) {
     $username: user.username,
     $url: `${process.env.UI_BASE_URL}${process.env.CONFIRM_EMAIL_URL}/${emailConfirm._id}`
   }
-  await MailService.send(userEmilData, mailType.EMAIL_CONFIRM); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
+  // await MailService.send(userEmilData, mailType.EMAIL_CONFIRM); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
   return responseMessage.USER.SUCCESSFUL_REGISTRATION;
 }
 
