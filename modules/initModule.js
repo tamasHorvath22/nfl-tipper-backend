@@ -2,9 +2,15 @@
 const WeekTrackerModel = require('../models/weekTracker');
 const regOrPst = require('../common/constants/regular-or-postseason')
 const ScheduleService = require('../services/schedule-service');
+const logger = require('../services/logger-service');
 
 module.exports = async function () {
-  await ScheduleService.closeWeek();
+  logger.log({
+    level: 'info',
+    message: 'Hello my pretty new logger!!!!!'
+  })
+
+  // await ScheduleService.closeWeek();
 
   // TODO comment back if goes to live
 

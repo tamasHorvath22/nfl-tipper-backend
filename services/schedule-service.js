@@ -62,11 +62,12 @@ async function closeWeek() {
   console.log('close week schedule setter called');
   const scheduleTime = '05 11 * * 2';
 
-  let minute = 36;
-  const tempTrigger = '08 * * * *';
+  let minute = 28;
+  const tempTrigger = '27 * * * *';
 
   schedule.scheduleJob(`${minute++} * * * *`, async function() {
     console.log('timed function triggered');
+    console.log(this);
 
     const transaction = new Transaction(true);
 
