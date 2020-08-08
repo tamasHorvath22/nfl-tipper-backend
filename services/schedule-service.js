@@ -17,7 +17,7 @@ module.exports = {
 // }
 
 // TODO remove, for testing
-let minute = 10;
+let minute = 17;
 
 const times = {
   week: `${minute + 0} * * * *`,
@@ -29,6 +29,8 @@ const times = {
 async function scheduleCloseWeek() {
 
   schedule.scheduleJob(times.week, async function() {
+    console.log('close week scheduled process called');
+    console.log(this);
     const transaction = new Transaction(true);
 
     for (let i = 0; i < this.length; i++) {
