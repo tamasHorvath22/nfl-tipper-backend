@@ -12,19 +12,7 @@ module.exports = async function () {
   
   await WeekTrackerDoc.initWeekTracker()
 
-  // await ScheduleService.scheduleAll();
-
   // TODO comment back if goes to live
+  await ScheduleService.scheduleAll();
 
-  // initgame();
-  // new deploy
-
-  // TODO set the starting tracker year to current year
-
-  // let weekTracker = WeekTrackerModel({
-  //   year: 2019,
-  //   week: 1,
-  //   regOrPst: regOrPst.REGULAR
-  // })
-  // weekTracker.save()
 }

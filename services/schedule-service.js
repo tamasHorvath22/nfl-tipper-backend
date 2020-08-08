@@ -31,7 +31,8 @@ async function scheduleCloseWeek() {
   schedule.scheduleJob(times.week, async function() {
     const transaction = new Transaction(true);
 
-    this.forEach(league => {
+    for (let i = 0; i < this.length; i++) {
+      const league = this[i];
       // TODO remove previous year (-1)
       const currentYear = new Date().getFullYear() - 1;
       const currentSeason = league.seasons.find(season => season.year === currentYear);
@@ -39,18 +40,39 @@ async function scheduleCloseWeek() {
       currentWeek.isOpen = false;
 
       league.markModified('seasons');
-      // transaction.insert(schemas.LEAGUE, league);
       transaction.update(schemas.LEAGUE, league._id, league, { new: true });
-    })
 
-    try {
-      console.log(await transaction.run());
-      console.log('week close success');
-    } catch (err)  {
-      await transaction.rollback();
-      console.log(err);
-      console.log('week close fail');
-    };
+      try {
+        console.log(await transaction.run());
+        console.log('week index: ' + i + ' close success');
+      } catch (err)  {
+        await transaction.rollback();
+        console.log(err);
+        console.log('week index: ' + i + ' close fail');
+      };
+    }
+
+
+    // this.forEach(league => {
+    //   // TODO remove previous year (-1)
+    //   const currentYear = new Date().getFullYear() - 1;
+    //   const currentSeason = league.seasons.find(season => season.year === currentYear);
+    //   const currentWeek = currentSeason.weeks[currentSeason.weeks.length - 1];
+    //   currentWeek.isOpen = false;
+
+    //   league.markModified('seasons');
+    //   // transaction.insert(schemas.LEAGUE, league);
+    //   transaction.update(schemas.LEAGUE, league._id, league, { new: true });
+    // })
+
+    // try {
+    //   console.log(await transaction.run());
+    //   console.log('week close success');
+    // } catch (err)  {
+    //   await transaction.rollback();
+    //   console.log(err);
+    //   console.log('week close fail');
+    // };
   }.bind(await LeagueDoc.getAllLeagues()));
 }
 
@@ -95,6 +117,7 @@ async function scheduleAll() {
   scheduleEvaluateGames();
   scheduleStepWeek();
   scheduleCreateNewWeek();
+  console.log('all process scheduled');
 }
 
 async function setBetEndings() {
