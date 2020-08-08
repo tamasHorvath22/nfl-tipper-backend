@@ -17,7 +17,7 @@ module.exports = {
 // }
 
 // TODO remove, for testing
-let minute = 49;
+let minute = 55;
 
 const times = {
   week: `${minute + 0} * * * *`,
@@ -26,12 +26,13 @@ const times = {
   createNewWeek: `${minute + 3} * * * *`
 }
 
-async function scheduleCloseWeek() {
+function scheduleCloseWeek() {
 
   schedule.scheduleJob(times.week, async function() {
     console.log('close week scheduled process called');
 
     const allLeagues = await LeagueDoc.getAllLeagues();
+    console.log(allLeagues);
     if (!allLeagues.length) {
       console.log('no leagues found');
       return;
@@ -120,8 +121,8 @@ function scheduleCreateNewWeek() {
   })
 }
 
-async function scheduleAll() {
-  await scheduleCloseWeek();
+function scheduleAll() {
+  scheduleCloseWeek();
   scheduleEvaluateGames();
   scheduleStepWeek();
   scheduleCreateNewWeek();

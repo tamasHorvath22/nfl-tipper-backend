@@ -13,6 +13,6 @@ module.exports = async function () {
   await WeekTrackerDoc.initWeekTracker()
 
   // TODO comment back if goes to live
-  await ScheduleService.scheduleAll();
+  ScheduleService.scheduleAll();
 
 }
