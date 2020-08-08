@@ -17,7 +17,7 @@ module.exports = {
 // }
 
 // TODO remove, for testing
-let minute = 21;
+let minute = 39;
 
 const times = {
   week: `${minute + 0} * * * *`,
@@ -40,9 +40,7 @@ function scheduleCloseWeek() {
 
     const transaction = new Transaction(true);
 
-    let itemIndex = 0;
     for (let i = 0; i < allLeagues.length; i++) {
-      itemIndex = i;
       const league = allLeagues[i];
       // TODO remove previous year (-1)
       const currentYear = new Date().getFullYear() - 1;
@@ -56,11 +54,11 @@ function scheduleCloseWeek() {
 
     try {
       console.log(await transaction.run());
-      console.log('week index: ' + itemIndex + ' close success');
+      console.log('weeks close success');
     } catch (err)  {
       await transaction.rollback();
       console.log(err);
-      console.log('week index: ' + itemIndex + ' close fail');
+      console.log('week close fail');
     };
 
 
