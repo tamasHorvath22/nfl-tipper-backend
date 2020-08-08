@@ -17,7 +17,7 @@ module.exports = {
 // }
 
 // TODO remove, for testing
-let minute = 28;
+let minute = 49;
 
 const times = {
   week: `${minute + 0} * * * *`,
@@ -32,7 +32,6 @@ function scheduleCloseWeek() {
     console.log('close week scheduled process called');
 
     const allLeagues = await LeagueDoc.getAllLeagues();
-    console.log(allLeagues);
     if (!allLeagues.length) {
       console.log('no leagues found');
       return;
@@ -53,35 +52,13 @@ function scheduleCloseWeek() {
     }
 
     try {
-      console.log(await transaction.run());
+      await transaction.run();
       console.log('weeks close success');
     } catch (err)  {
       await transaction.rollback();
       console.log(err);
       console.log('week close fail');
     };
-
-
-    // this.forEach(league => {
-    //   // TODO remove previous year (-1)
-    //   const currentYear = new Date().getFullYear() - 1;
-    //   const currentSeason = league.seasons.find(season => season.year === currentYear);
-    //   const currentWeek = currentSeason.weeks[currentSeason.weeks.length - 1];
-    //   currentWeek.isOpen = false;
-
-    //   league.markModified('seasons');
-    //   // transaction.insert(schemas.LEAGUE, league);
-    //   transaction.update(schemas.LEAGUE, league._id, league, { new: true });
-    // })
-
-    // try {
-    //   console.log(await transaction.run());
-    //   console.log('week close success');
-    // } catch (err)  {
-    //   await transaction.rollback();
-    //   console.log(err);
-    //   console.log('week close fail');
-    // };
   });
 }
 
