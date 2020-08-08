@@ -17,7 +17,7 @@ module.exports = {
 // }
 
 // TODO remove, for testing
-let minute = 55;
+let minute = 58;
 
 const times = {
   week: `${minute + 0} * * * *`,
@@ -82,7 +82,7 @@ function scheduleCloseWeek() {
     //   console.log(err);
     //   console.log('week close fail');
     // };
-  }.bind(allLeagues));
+  });
 }
 
 function scheduleEvaluateGames() {
