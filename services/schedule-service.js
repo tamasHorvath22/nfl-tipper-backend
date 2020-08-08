@@ -17,7 +17,7 @@ module.exports = {
 // }
 
 // TODO remove, for testing
-let minute = 24;
+let minute = 49;
 
 const times = {
   week: `${minute + 0} * * * *`,
@@ -28,15 +28,15 @@ const times = {
 
 async function scheduleCloseWeek() {
 
-  const allLeagues = await LeagueDoc.getAllLeagues();
-  if (!allLeagues.length) {
-    console.log('no leagues found');
-    return;
-  }
-
   schedule.scheduleJob(times.week, async function() {
     console.log('close week scheduled process called');
-    console.log(this);
+
+    const allLeagues = await LeagueDoc.getAllLeagues();
+    if (!allLeagues.length) {
+      console.log('no leagues found');
+      return;
+    }
+
     const transaction = new Transaction(true);
 
     for (let i = 0; i < this.length; i++) {
@@ -49,16 +49,16 @@ async function scheduleCloseWeek() {
 
       league.markModified('seasons');
       transaction.update(schemas.LEAGUE, league._id, league, { new: true });
-
-      try {
-        console.log(await transaction.run());
-        console.log('week index: ' + i + ' close success');
-      } catch (err)  {
-        await transaction.rollback();
-        console.log(err);
-        console.log('week index: ' + i + ' close fail');
-      };
     }
+
+    try {
+      console.log(await transaction.run());
+      console.log('week index: ' + i + ' close success');
+    } catch (err)  {
+      await transaction.rollback();
+      console.log(err);
+      console.log('week index: ' + i + ' close fail');
+    };
 
 
     // this.forEach(league => {
