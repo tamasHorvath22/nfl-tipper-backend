@@ -17,7 +17,7 @@ module.exports = {
 // }
 
 // TODO remove, for testing
-let minute = 17;
+let minute = 24;
 
 const times = {
   week: `${minute + 0} * * * *`,
@@ -27,6 +27,12 @@ const times = {
 }
 
 async function scheduleCloseWeek() {
+
+  const allLeagues = await LeagueDoc.getAllLeagues();
+  if (!allLeagues.length) {
+    console.log('no leagues found');
+    return;
+  }
 
   schedule.scheduleJob(times.week, async function() {
     console.log('close week scheduled process called');
@@ -75,7 +81,7 @@ async function scheduleCloseWeek() {
     //   console.log(err);
     //   console.log('week close fail');
     // };
-  }.bind(await LeagueDoc.getAllLeagues()));
+  }.bind(allLeagues));
 }
 
 function scheduleEvaluateGames() {
