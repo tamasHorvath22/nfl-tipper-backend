@@ -17,7 +17,7 @@ module.exports = {
 // }
 
 // TODO remove, for testing
-let minute = 08;
+let minute = 21;
 
 const times = {
   week: `${minute + 0} * * * *`,
@@ -41,9 +41,9 @@ function scheduleCloseWeek() {
     const transaction = new Transaction(true);
 
     let itemIndex = 0;
-    for (let i = 0; i < this.length; i++) {
+    for (let i = 0; i < allLeagues.length; i++) {
       itemIndex = i;
-      const league = this[i];
+      const league = allLeagues[i];
       // TODO remove previous year (-1)
       const currentYear = new Date().getFullYear() - 1;
       const currentSeason = league.seasons.find(season => season.year === currentYear);
