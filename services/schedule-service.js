@@ -17,7 +17,7 @@ module.exports = {
 // }
 
 // TODO remove, for testing
-let minute = 58;
+let minute = 03;
 
 const times = {
   week: `${minute + 0} * * * *`,

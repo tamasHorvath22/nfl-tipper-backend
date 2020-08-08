@@ -31,7 +31,7 @@ async function getLeagueById(id) {
 }
 
 async function getAllLeagues() {
-  return await League.find();
+  return await League.find({});
 }
 
 async function getLeague(leagueId) {
