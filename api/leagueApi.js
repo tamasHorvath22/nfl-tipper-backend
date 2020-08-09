@@ -81,6 +81,17 @@ module.exports = function(app) {
   /* 
     request: 
     { 
+      leagueId: leagueId
+      week: week
+    }
+  */
+  app.post('/api/league/trigger-manually', jsonParser, async function (req, res) {
+    res.send(await LeagueService.triggerManually());
+  });
+
+  /* 
+    request: 
+    { 
       leagueId: leagueId,
       invitedEmail: invitedEmail
     }

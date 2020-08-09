@@ -5,7 +5,8 @@ const schemas = require('../common/constants/schemas');
 const GameService = require('../services/game-service');
 
 module.exports = {
-  scheduleAll: scheduleAll
+  scheduleAll: scheduleAll,
+  triggerManually: triggerManually
 }
 
 // production times
@@ -27,75 +28,91 @@ const times = {
 }
 
 function scheduleCloseWeek() {
+  schedule.scheduleJob(times.week, closeWeek);
+}
 
-  schedule.scheduleJob(times.week, async function() {
-    console.log('close week scheduled process called');
+async function closeWeek() {
+  console.log('close week scheduled process called');
 
-    const allLeagues = await LeagueDoc.getAllLeagues();
-    if (!allLeagues.length) {
-      console.log('no leagues found');
-      return;
-    }
+  const allLeagues = await LeagueDoc.getAllLeagues();
+  if (!allLeagues.length) {
+    console.log('no leagues found');
+    return;
+  }
 
-    const transaction = new Transaction(true);
+  const transaction = new Transaction(true);
 
-    for (let i = 0; i < allLeagues.length; i++) {
-      const league = allLeagues[i];
-      // TODO remove previous year (-1)
-      const currentYear = new Date().getFullYear() - 1;
-      const currentSeason = league.seasons.find(season => season.year === currentYear);
-      const currentWeek = currentSeason.weeks[currentSeason.weeks.length - 1];
-      currentWeek.isOpen = false;
+  for (let i = 0; i < allLeagues.length; i++) {
+    const league = allLeagues[i];
+    // TODO remove previous year (-1)
+    const currentYear = new Date().getFullYear() - 1;
+    const currentSeason = league.seasons.find(season => season.year === currentYear);
+    const currentWeek = currentSeason.weeks[currentSeason.weeks.length - 1];
+    currentWeek.isOpen = false;
 
-      league.markModified('seasons');
-      transaction.update(schemas.LEAGUE, league._id, league, { new: true });
-    }
+    league.markModified('seasons');
+    transaction.update(schemas.LEAGUE, league._id, league, { new: true });
+  }
 
-    try {
-      await transaction.run();
-      console.log('weeks close success');
-    } catch (err)  {
-      await transaction.rollback();
-      console.log(err);
-      console.log('week close fail');
-    };
-  });
+  try {
+    await transaction.run();
+    console.log('weeks close success');
+    return 'weeks close success';
+  } catch (err)  {
+    await transaction.rollback();
+    console.log(err);
+    console.log('week close fail');
+    return 'week close fail';
+  };
 }
 
 function scheduleEvaluateGames() {
-  schedule.scheduleJob(times.evaluateGames, async function() {
-    try {
-      await GameService.evaluateWeek();
-      console.log('week evaluation success');
-    } catch (err) {
-      console.log(err);
-      console.log('week evaluation fail');
-    }
-  })
+  schedule.scheduleJob(times.evaluateGames, evaluateGames)
+}
+
+async function evaluateGames() {
+  try {
+    await GameService.evaluateWeek();
+    console.log('week evaluation success');
+  } catch (err) {
+    console.log(err);
+    console.log('week evaluation fail');
+  }
 }
 
 function scheduleStepWeek() {
-  schedule.scheduleJob(times.stepWeek, async function() {
-    try {
-      await GameService.stepWeekTracker();
-      console.log('week tracker step success');
-    } catch (err) {
-      console.log(err);
-      console.log('week tracker step fail');
-    }
-  })
+  schedule.scheduleJob(times.stepWeek, stepWeek)
+}
+
+async function stepWeek() {
+  try {
+    await GameService.stepWeekTracker();
+    console.log('week tracker step success');
+  } catch (err) {
+    console.log(err);
+    console.log('week tracker step fail');
+  }
 }
 
 function scheduleCreateNewWeek() {
-  schedule.scheduleJob(times.createNewWeek, async function() {
-    try {
-      await GameService.createNewWeekAndGames();
-      console.log('new week creation success');
-    } catch (err) {
-      console.log(err);
-      console.log('new week creation fail');
-    }
-  })
+  schedule.scheduleJob(times.createNewWeek, createNewWeek)
+}
+
+async function createNewWeek() {
+  try {
+    await GameService.createNewWeekAndGames();
+    console.log('new week creation success');
+  } catch (err) {
+    console.log(err);
+    console.log('new week creation fail');
+  }
+}
+
+async function triggerManually() {
+  await closeWeek();
+  await evaluateGames();
+  await stepWeek();
+  await createNewWeek();
 }
 
 function scheduleAll() {

@@ -8,6 +8,7 @@ const LeagueDoc = require('../persistence/league-doc');
 const schemas = require('../common/constants/schemas');
 const GameService = require('../services/game-service');
 const mongoose = require('mongoose');
+const ScheduleService = require('../services/schedule-service');
 
 module.exports = {
   createLeague: createLeague,
@@ -16,7 +17,8 @@ module.exports = {
   sendInvitation: sendInvitation,
   acceptInvitaion: acceptInvitaion,
   getSeasonData: getSeasonData,
-  saveWeekBets: saveWeekBets
+  saveWeekBets: saveWeekBets,
+  triggerManually: triggerManually
 }
 
 async function createLeague(creator, leagueData) {
@@ -256,3 +258,7 @@ async function saveWeekBets(userId, leagueId, incomingWeek) {
     return responseMessage.LEAGUE.BET_SAVE_FAIL;
   };
 };
+
+async function triggerManually() {
+  return await ScheduleService.triggerManually();
+}
