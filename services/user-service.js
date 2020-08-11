@@ -10,6 +10,7 @@ const schemas = require('../common/constants/schemas');
 const MailService = require('../services/mailService');
 const Transaction = require('mongoose-transactions');
 const UserDoc = require('../persistence/user-doc');
+const LeagueDoc = require('../persistence/league-doc');
 
 module.exports = {
   login: login,
@@ -286,11 +287,38 @@ async function changeUserData(userId, avatarUrl) {
   } catch (err) {
     console.log(err);
     return responseMessage.USER.NOT_FOUND;
-  }
-
+  }  
   user.avatarUrl = avatarUrl;
   const transaction = new Transaction(true);
   transaction.insert(schemas.USER, user);
+
+  if (user.leagues.length) {
+    let leagueIds = [];
+    user.leagues.forEach(league => {
+      leagueIds.push(league.leagueId);
+    })
+
+    let leagues;
+    try {
+      leagues = await LeagueDoc.getLeaguesByIds(leagueIds);
+      console.log('incoming leagues: ');
+      console.log(leagues);
+      if (!leagues) {
+        return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+      }
+    } catch (err) {
+      console.log(err);
+      return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+    }
+    leagues.forEach(league => {
+      // TODO remove year - 1 to production
+      const currentSeason = league.seasons.find(season => season.year = new Date().getFullYear() - 1);
+      currentSeason.standings.find(player => player.id.equals(user._id)).avatar = user.avatarUrl;
+      league.markModified('standings');
+      transaction.update(schemas.LEAGUE, league._id, league, { new: true });
+    })
+  }
+
 
   try {
     await transaction.run();

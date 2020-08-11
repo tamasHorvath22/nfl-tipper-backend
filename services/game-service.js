@@ -36,36 +36,8 @@ async function createNewWeekAndGames() {
     if (currentSeason.weeks.find(week => week.weekId === weekData.week.id)) {
       return;
     }
-    let week = WeekModel({
-      weekId: weekData.week.id,
-      number: weekData.week.sequence,
-      isOpen: true,
-      games: []
-    })
-    weekData.week.games.forEach(game => {
-      let newGame = GameModel({
-        gameId: game.id,
-        homeTeam: game.home.name,
-        homeTeamAlias: game.home.alias,
-        awayTeam: game.away.name,
-        awayTeamAlias: game.away.alias,
-        status: gameStatus.SCHEDULED,
-        homeScore: null,
-        awayScore: null,
-        startTime: game.scheduled,
-        isOpen: true,
-        winner: null,
-        winnerTeamAlias: null,
-        bets: []
-      })
-      league.players.forEach(player => {
-        newGame.bets.push({ id: player.id, name: player.name, bet: null })
-      })
-      week.games.push(newGame);
-    })
-
-    currentSeason.weeks.push(week);
-    league.markModified('seasons')
+    currentSeason.weeks.push(initNewWeek(weekData, league));
+    league.markModified('seasons');
     transaction.insert(schemas.LEAGUE, league);
   })
 
@@ -86,6 +58,19 @@ async function createNewWeekForLeague(leagueId) {
   if (currentSeason.weeks.find(week => week.weekId === weekData.week.id)) {
     return;
   }
+  currentSeason.weeks.push(initNewWeek(weekData, league));
+  league.markModified('seasons')
+  transaction.insert(schemas.LEAGUE, league);
+
+  try {
+    await transaction.run();
+  } catch (err) {
+    console.log(err);
+    transaction.rollback();
+  }
+}
+
+function initNewWeek(weekData, league) {
   let week = WeekModel({
     weekId: weekData.week.id,
     number: weekData.week.sequence,
@@ -113,17 +98,7 @@ async function createNewWeekForLeague(leagueId) {
     })
     week.games.push(newGame);
   })
-
-  currentSeason.weeks.push(week);
-  league.markModified('seasons')
-  transaction.insert(schemas.LEAGUE, league);
-
-  try {
-    await transaction.run();
-  } catch (err) {
-    console.log(err);
-    transaction.rollback();
-  }
+  return week;
 }
 
 async function evaluateWeek() {

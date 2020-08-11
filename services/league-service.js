@@ -47,7 +47,7 @@ async function createLeague(creator, leagueData) {
         // TODO remove previous year (-1)
         numberOfSuperBowl: currentYear - 1 - 1965,
         weeks: [],
-        standings: [{ id: user._id, name: user.username, score: 0 }],
+        standings: [{ id: user._id, name: user.username, score: 0, avatar: user.avatarUrl }],
         isOver: false,
         isCurrent: true
       })
@@ -169,7 +169,7 @@ async function acceptInvitaion(invitedUserId, leagueId) {
   league.invitations.splice(league.invitations.indexOf(user._id));
   league.players.push({ id: user._id, name: user.username });
   const currentSeason = league.seasons.find(season => season.isCurrent);
-  currentSeason.standings.push({ id: user._id.toString(), name: user.username, score: 0 })
+  currentSeason.standings.push({ id: user._id.toString(), name: user.username, score: 0, avatar: user.avatarUrl })
   if (currentSeason.weeks.length) {
     const currentWeek = currentSeason.weeks.find(week => week.isOpen);
     currentWeek.games.forEach(game => {

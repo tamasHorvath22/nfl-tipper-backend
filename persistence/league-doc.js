@@ -5,29 +5,33 @@ module.exports = {
   getLeagueNames: getLeagueNames,
   getLeagueById: getLeagueById,
   getAllLeagues: getAllLeagues,
-  getLeague: getLeague
+  getLeague: getLeague,
+  getLeaguesByIds: getLeaguesByIds
 }
 
 async function getLeagueNames(idList) {
-  let idArray = []
-  idList.forEach(league => {
-    idArray.push(mongoose.Types.ObjectId(league))
+  const leagues = await findLeaguesByIds(idList);
+  const leagueNames = []
+  leagues.forEach(league => {
+    leagueNames.push({ _id: league._id, name: league.name })
   })
-
-  await League.find({ _id: { $in: idArray } }, (err, leagues) => {
-    if (err) {
-      return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
-    }
-    const leagueNames = []
-    leagues.forEach(league => {
-      leagueNames.push({ _id: league._id, name: league.name })
-    })
-    return leagueNames;
-  });
+  return leagueNames;
 }
 
 async function getLeagueById(id) {
   return await League.findById(id).exec();
+}
+
+async function getLeaguesByIds(idList) {
+  return await findLeaguesByIds(idList);
+}
+
+async function findLeaguesByIds(idList) {
+  const mongooseIdArray = [];
+  idList.forEach(league => {
+    mongooseIdArray.push(mongoose.Types.ObjectId(league))
+  })
+  return await League.find({ _id: { $in: mongooseIdArray } });
 }
 
 async function getAllLeagues() {
