@@ -301,8 +301,6 @@ async function changeUserData(userId, avatarUrl) {
     let leagues;
     try {
       leagues = await LeagueDoc.getLeaguesByIds(leagueIds);
-      console.log('incoming leagues: ');
-      console.log(leagues);
       if (!leagues) {
         return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
       }
@@ -313,7 +311,9 @@ async function changeUserData(userId, avatarUrl) {
     leagues.forEach(league => {
       // TODO remove year - 1 to production
       const currentSeason = league.seasons.find(season => season.year = new Date().getFullYear() - 1);
-      currentSeason.standings.find(player => player.id.equals(user._id)).avatar = user.avatarUrl;
+      console.log(currentSeason.standings);
+      console.log(user._id);
+      currentSeason.standings.find(player => user._id.equals(player.id)).avatar = user.avatarUrl;
       league.markModified('standings');
       transaction.update(schemas.LEAGUE, league._id, league, { new: true });
     })
@@ -328,7 +328,6 @@ async function changeUserData(userId, avatarUrl) {
     transaction.rollback();
     return responseMessage.USER.MODIFY_FAIL;
   };
-
 }
 
 function getUserToToken(user) {

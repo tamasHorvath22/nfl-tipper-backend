@@ -112,7 +112,10 @@ async function triggerManually() {
   await closeWeek();
   await evaluateGames();
   await stepWeek();
-  await createNewWeek();
+  setTimeout(async () => {
+    console.log('create new week function called');
+    await createNewWeek();
+  }, 2000)
 }
 
 function scheduleAll() {
