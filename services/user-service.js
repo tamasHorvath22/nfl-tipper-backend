@@ -40,7 +40,7 @@ async function login(userDto) {
   }
   let authenticated;
   try {
-    authenticated = await bcrypt.compare(userDto.password, user.password);
+    authenticated = await bcrypt.compare(decryptPassword(userDto.password), user.password);
   } catch (err) {
     console.log(err);
     return responseMessage.USER.AUTHENTICATION_ERROR;
