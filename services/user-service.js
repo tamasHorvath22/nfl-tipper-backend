@@ -11,6 +11,7 @@ const MailService = require('../services/mailService');
 const Transaction = require('mongoose-transactions');
 const UserDoc = require('../persistence/user-doc');
 const LeagueDoc = require('../persistence/league-doc');
+const CryptoJS = require('crypto-js');
 
 module.exports = {
   login: login,
@@ -56,13 +57,18 @@ async function login(userDto) {
   }
 }
 
+function decryptPassword(hash) {
+  const bytes = CryptoJS.AES.decrypt(hash, process.env.PASSWORD_SECRET_KEY);
+  return bytes.toString(CryptoJS.enc.Utf8);
+}
+
 async function register(userDto) {
   if (userDto.username[0] === '$') {
     return responseMessage.USER.USERNAME_TAKEN;
   }
   const user = User({
     username: userDto.username,
-    password: userDto.password,
+    password: decryptPassword(userDto.password),
     email: userDto.email,
     leagues: [],
     invitations: [],

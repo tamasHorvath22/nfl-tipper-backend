@@ -32,8 +32,6 @@ function scheduleCloseWeek() {
 }
 
 async function closeWeek() {
-  console.log('close week scheduled process called');
-
   const allLeagues = await LeagueDoc.getAllLeagues();
   if (!allLeagues.length) {
     console.log('no leagues found');
@@ -57,12 +55,10 @@ async function closeWeek() {
   try {
     await transaction.run();
     console.log('weeks close success');
-    return 'weeks close success';
   } catch (err)  {
     await transaction.rollback();
     console.log(err);
     console.log('week close fail');
-    return 'week close fail';
   };
 }
 
@@ -115,7 +111,7 @@ async function triggerManually() {
   setTimeout(async () => {
     console.log('create new week function called');
     await createNewWeek();
-  }, 2000)
+  }, 10000)
 }
 
 function scheduleAll() {
