@@ -7,5 +7,6 @@ module.exports = Object.freeze({
     CONFIRM_EMAIL: 'ConfirmEmail',
     FORGOT_PASSWORD: 'ForgotPassword',
     BET: 'Bet',
-    WEEK_TRACKER: 'WeekTracker'
+    WEEK_TRACKER: 'WeekTracker',
+    BACKUP: 'Backup'
 })

@@ -1,4 +1,5 @@
 const League = require('../models/leagueModel');
+const LeagueInvitation = require('../models/leagueInvitationModel');
 const mongoose = require('mongoose');
 
 module.exports = {
@@ -6,7 +7,8 @@ module.exports = {
   getLeagueById: getLeagueById,
   getAllLeagues: getAllLeagues,
   getLeague: getLeague,
-  getLeaguesByIds: getLeaguesByIds
+  getLeaguesByIds: getLeaguesByIds,
+  getAllLeagueInvitations: getAllLeagueInvitations
 }
 
 async function getLeagueNames(idList) {
@@ -40,4 +42,8 @@ async function getAllLeagues() {
 
 async function getLeague(leagueId) {
   return await League.findById(leagueId);
+}
+
+async function getAllLeagueInvitations() {
+  return await LeagueInvitation.find({});
 }
