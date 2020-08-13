@@ -82,8 +82,10 @@ module.exports = function(app) {
     request: 
       no data
   */
-  app.post('/api/league/trigger-manually', jsonParser, async function (req, res) {
-    res.send(await LeagueService.triggerManually());
+  app.post('/api/league/week-close-manually', jsonParser, async function (req, res) {
+    if (req.decoded.isAdmin) {
+      res.send(await LeagueService.triggerManually());
+    }
   });
 
   /* 
@@ -91,7 +93,9 @@ module.exports = function(app) {
       no data
   */
   app.post('/api/league/create-new-season', jsonParser, async function (req, res) {
-    res.send(await LeagueService.createNewSeason());
+    if (req.decoded.isAdmin) {
+      res.send(await LeagueService.createNewSeason());
+    }
   });
 
   /* 

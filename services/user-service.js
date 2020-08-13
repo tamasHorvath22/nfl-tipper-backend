@@ -338,6 +338,7 @@ function getUserToToken(user) {
   return {
     username: user.username,
     userId: user._id,
-    userEmail: user.email
+    userEmail: user.email,
+    isAdmin: user.isAdmin
   }
 }
