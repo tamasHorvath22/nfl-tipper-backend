@@ -316,15 +316,13 @@ async function changeUserData(userId, avatarUrl) {
     }
     leagues.forEach(league => {
       // TODO remove year - 1 to production
-      const currentSeason = league.seasons.find(season => season.year = new Date().getFullYear() - 1);
-      console.log(currentSeason.standings);
-      console.log(user._id);
-      currentSeason.standings.find(player => user._id.equals(player.id)).avatar = user.avatarUrl;
-      league.markModified('standings');
+      // const currentSeason = league.seasons.find(season => season.year = new Date().getFullYear() - 1);
+      // currentSeason.standings.find(player => user._id.equals(player.id)).avatar = user.avatarUrl;
+      league.players.find(player => user._id.equals(player.id)).avatar = user.avatarUrl;
+      league.markModified('players');
       transaction.update(schemas.LEAGUE, league._id, league, { new: true });
     })
   }
-
 
   try {
     await transaction.run();

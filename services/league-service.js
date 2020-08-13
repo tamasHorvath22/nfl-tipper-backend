@@ -18,7 +18,8 @@ module.exports = {
   acceptInvitaion: acceptInvitaion,
   getSeasonData: getSeasonData,
   saveWeekBets: saveWeekBets,
-  triggerManually: triggerManually
+  triggerManually: triggerManually,
+  createNewSeason: createNewSeason
 }
 
 async function createLeague(creator, leagueData) {
@@ -37,7 +38,7 @@ async function createLeague(creator, leagueData) {
     name: leagueData.name,
     creator: creator.userId,
     invitations: [],
-    players: [{ id: user._id, name: user.username }],
+    players: [{ id: user._id, name: user.username, avatar: user.avatarUrl }],
     seasons: [
       Season({
         // TODO remove previous year (-1)
@@ -47,8 +48,8 @@ async function createLeague(creator, leagueData) {
         // TODO remove previous year (-1)
         numberOfSuperBowl: currentYear - 1 - 1965,
         weeks: [],
-        standings: [{ id: user._id, name: user.username, score: 0, avatar: user.avatarUrl }],
-        isOver: false,
+        standings: [{ id: user._id, name: user.username, score: 0 }],
+        isOpen: true,
         isCurrent: true
       })
     ],
@@ -167,9 +168,9 @@ async function acceptInvitaion(invitedUserId, leagueId) {
   user.invitations.splice(user.invitations.indexOf(league._id), 1);
   user.leagues.push({ leagueId: league._id, name: league.name });
   league.invitations.splice(league.invitations.indexOf(user._id));
-  league.players.push({ id: user._id, name: user.username });
+  league.players.push({ id: user._id, name: user.username, avatar: user.avatarUrl });
   const currentSeason = league.seasons.find(season => season.isCurrent);
-  currentSeason.standings.push({ id: user._id.toString(), name: user.username, score: 0, avatar: user.avatarUrl })
+  currentSeason.standings.push({ id: user._id.toString(), name: user.username, score: 0 })
   if (currentSeason.weeks.length) {
     const currentWeek = currentSeason.weeks.find(week => week.isOpen);
     currentWeek.games.forEach(game => {
@@ -261,4 +262,8 @@ async function saveWeekBets(userId, leagueId, incomingWeek) {
 
 async function triggerManually() {
   return await ScheduleService.triggerManually();
+}
+
+async function createNewSeason() {
+  return await GameService.createNewSeason();
 }

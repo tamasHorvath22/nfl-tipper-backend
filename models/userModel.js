@@ -10,6 +10,7 @@ let userSchema = new Schema({
   email: { type : String, unique: true, required: true },
   avatarUrl: { type: String },
   isEmailConfirmed: false,
+  isAdmin: false,
   leagues: [],
   invitations: []
 }, { timestamps: true });

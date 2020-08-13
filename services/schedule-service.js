@@ -68,11 +68,13 @@ function scheduleEvaluateGames() {
 
 async function evaluateGames() {
   try {
-    await GameService.evaluateWeek();
+    const isSuperBowlWeek = await GameService.evaluateWeek();
     console.log('week evaluation success');
+    return isSuperBowlWeek;
   } catch (err) {
     console.log(err);
     console.log('week evaluation fail');
+    return true;
   }
 }
 
@@ -106,12 +108,13 @@ async function createNewWeek() {
 
 async function triggerManually() {
   await closeWeek();
-  await evaluateGames();
-  await stepWeek();
-  setTimeout(async () => {
-    console.log('create new week function called');
-    await createNewWeek();
-  }, 10000)
+  const isSuperBowlWeek = await evaluateGames();
+  if (!isSuperBowlWeek) {
+    await stepWeek();
+    setTimeout(async () => {
+      await createNewWeek();
+    }, 10000)
+  }
 }
 
 function scheduleAll() {

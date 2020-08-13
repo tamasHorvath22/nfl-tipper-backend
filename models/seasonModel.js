@@ -7,7 +7,7 @@ let seasonSchema = new Schema({
     numberOfSeason: Number,
     numberOfSuperBowl: Number,
     weeks: [],
-    isOver: Boolean,
+    isOpen: Boolean,
     isCurrent: Boolean,
     standings: []
 }, { timestamps: true });

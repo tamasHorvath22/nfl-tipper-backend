@@ -2,6 +2,7 @@ const axios = require('axios');
 const LeagueDoc = require('../persistence/league-doc');
 const GameModel = require('../models/gameModel');
 const WeekModel = require('../models/weekModel');
+const SeasonModel = require('../models/seasonModel');
 const gameStatus = require('../common/constants/game-status');
 const Transaction = require('mongoose-transactions');
 const schemas = require('../common/constants/schemas');
@@ -13,7 +14,8 @@ module.exports = {
   createNewWeekForLeague: createNewWeekForLeague,
   createNewWeekAndGames: createNewWeekAndGames,
   evaluateWeek: evaluateWeek,
-  stepWeekTracker: stepWeekTracker
+  stepWeekTracker: stepWeekTracker,
+  createNewSeason: createNewSeason
 }
 
 async function getWeekData() {
@@ -24,6 +26,54 @@ async function getWeekData() {
   const path = `${baseApiUrl}${weekTracker.year}/${weekTracker.regOrPst}/${weekTracker.week}${apiKeyPart}${process.env.SPORTRADAR_KEY}`
   const weekData = await axios.get(path);
   return weekData.data;
+}
+
+async function createNewSeason() {
+  // TODO uncomment this for production
+  // try {
+  //   await resetWeekTrackerForNextYear();
+  // } catch (err) {
+  //   console.error(err);
+  //   console.log('Before new season creation, week tracker reset failed.');
+  //   return;
+  // }
+
+  const leagues = await LeagueDoc.getAllLeagues();
+  const transaction = new Transaction(true);
+  const currentYear = new Date().getFullYear();
+
+  leagues.forEach(league => {
+    if (league.seasons.find(season => season.year === currentYear)) {
+      return;
+    }
+    standingsInit = [];
+    league.players.forEach(player => {
+      standingsInit.push({ id: player.id, name: player.name, score: 0 })
+    })
+
+    const newSeason = SeasonModel({
+      year: currentYear,
+      numberOfSeason: currentYear - 1919,
+      numberOfSuperBowl: currentYear - 1965,
+      weeks: [],
+      standings: standingsInit,
+      isOpen: true,
+      isCurrent: true
+    })
+    league.seasons[league.seasons.length - 1].isCurrent = false;
+    league.seasons.push(newSeason);
+    league.markModified('seasons');
+    transaction.insert(schemas.LEAGUE, league);
+  })
+
+  try {
+    await transaction.run();
+  } catch (err) {
+    console.error(err);
+    await transaction.rollback();
+    return;
+  }
+  await createNewWeekAndGames()
 }
 
 async function createNewWeekAndGames() {
@@ -71,9 +121,10 @@ async function createNewWeekForLeague(leagueId) {
 }
 
 function initNewWeek(weekData, league) {
+  const weekNum = weekData.type === regOrPst.POSTSEASON ? 17 + weekData.week.sequence : weekData.week.sequence
   let week = WeekModel({
     weekId: weekData.week.id,
-    number: weekData.week.sequence,
+    number: weekNum,
     isOpen: true,
     games: []
   })
@@ -105,6 +156,7 @@ async function evaluateWeek() {
   const leagues = await LeagueDoc.getAllLeagues();
   const weekResults = await getWeekData();
   const transaction = new Transaction(true);
+  const isSuperBowlWeek = isSuperBowlWeek(weekResults);
   
   leagues.forEach(league => {
     const resultObject = {};
@@ -138,6 +190,9 @@ async function evaluateWeek() {
     currentSeason.standings.forEach(standing => {
       standing.score += resultObject[standing.id];
     })
+    if (isSuperBowlWeek) {
+      currentSeason.isOpen = false;
+    }
 
     league.markModified('seasons')
     transaction.insert(schemas.LEAGUE, league);
@@ -145,22 +200,27 @@ async function evaluateWeek() {
 
   try {
     await transaction.run();
+    return isSuperBowlWeek;
   } catch (err) {
     console.log(err);
     await transaction.rollback();
   }
 }
 
+function isSuperBowlWeek(week) {
+  return week.type === regOrPst.POSTSEASON && week.week.sequence === 4;
+}
+
 async function stepWeekTracker() {
   const weekTracker = await WeekTrackerDoc.getTracker();
+  if (weekTracker.regOrPst === regOrPst.POSTSEASON && weekTracker.week === 4) {
+    // after super bowl, when evaluating the week, not changing the week tracker
+    return;
+  }
 
   if (weekTracker.regOrPst === regOrPst.REGULAR && weekTracker.week === 17) {
     weekTracker.week = 1;
     weekTracker.regOrPst = regOrPst.POSTSEASON;
-  } else if (weekTracker.regOrPst === regOrPst.POSTSEASON && weekTracker.week === 4) {
-    weekTracker.year++;
-    weekTracker.week = 1;
-    weekTracker.regOrPst = regOrPst.REGULAR
   } else {
     weekTracker.week++;
   }
@@ -172,6 +232,22 @@ async function stepWeekTracker() {
     await transaction.run();
   } catch (err)  {
     console.log(err);
+    await transaction.rollback();
+  };
+}
+
+async function resetWeekTrackerForNextYear() {
+  const weekTracker = await WeekTrackerDoc.getTracker();
+  weekTracker.regOrPst = regOrPst.REGULAR;
+  weekTracker.week = 1;
+
+  const transaction = new Transaction(true);
+  transaction.insert(schemas.WEEK_TRACKER, weekTracker);
+
+  try {
+    await transaction.run();
+  } catch (err)  {
+    console.error(err);
     await transaction.rollback();
   };
 }

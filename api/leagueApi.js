@@ -80,13 +80,18 @@ module.exports = function(app) {
 
   /* 
     request: 
-    { 
-      leagueId: leagueId
-      week: week
-    }
+      no data
   */
   app.post('/api/league/trigger-manually', jsonParser, async function (req, res) {
     res.send(await LeagueService.triggerManually());
+  });
+
+  /* 
+    request: 
+      no data
+  */
+  app.post('/api/league/create-new-season', jsonParser, async function (req, res) {
+    res.send(await LeagueService.createNewSeason());
   });
 
   /* 
