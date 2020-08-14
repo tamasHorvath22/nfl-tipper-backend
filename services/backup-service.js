@@ -31,7 +31,7 @@ async function saveBackup() {
     let tempArray = [];
     console.log(dataFromDb[key])
     for (let i = 0; i < dataFromDb[key].length; i++) {
-      tempArray.push(JSON.stringify(dataFromDb[key][i]));
+      tempArray.push(dataFromDb[key][i]);
     }
     backupStrings[key] = tempArray;
   })

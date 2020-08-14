@@ -18,5 +18,4 @@ module.exports = async function () {
   // console.log(JSON.parse(cucc.users));
   
   // await BackupService.saveBackup();
-
 }

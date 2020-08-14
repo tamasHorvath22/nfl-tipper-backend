@@ -15,7 +15,7 @@ async function getLeagueNames(idList) {
   const leagues = await findLeaguesByIds(idList);
   const leagueNames = []
   leagues.forEach(league => {
-    leagueNames.push({ _id: league._id, name: league.name })
+    leagueNames.push({ id: league._id, name: league.name, avatar: league.leagueAvatarUrl })
   })
   return leagueNames;
 }
