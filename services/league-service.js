@@ -19,7 +19,8 @@ module.exports = {
   getSeasonData: getSeasonData,
   saveWeekBets: saveWeekBets,
   triggerManually: triggerManually,
-  createNewSeason: createNewSeason
+  createNewSeason: createNewSeason,
+  modifyAvatar: modifyAvatar
 }
 
 async function createLeague(creator, leagueData) {
@@ -66,7 +67,8 @@ async function createLeague(creator, leagueData) {
     await transaction.run();
     console.log('league save success')
   } catch (err)  {
-    transaction.rollback();
+    await transaction.rollback();
+    console.error(err);
     console.log('league save fail')
     return responseMessage.LEAGUE.CREATE_FAIL;
   };
@@ -135,7 +137,8 @@ async function sendInvitation(invitorId, inviteData) {
       // MailService.send()
       return responseMessage.LEAGUE.INVITATION_SUCCESS;
     } catch (err)  {
-      transaction.rollback();
+      console.error(err);
+      await transaction.rollback();
       return responseMessage.LEAGUE.INVITATION_FAIL;
     };
   }
@@ -186,8 +189,9 @@ async function acceptInvitaion(invitedUserId, leagueId) {
   try {
     await transaction.run();
     return user;
-  } catch (err)  {
-    transaction.rollback();
+  } catch (err) {
+    console.error(err);
+    await transaction.rollback();
     return responseMessage.LEAGUE.JOIN_FAIL;
   };
 };
@@ -255,8 +259,38 @@ async function saveWeekBets(userId, leagueId, incomingWeek) {
     await transaction.run();
     return responseMessage.LEAGUE.BET_SAVE_SUCCESS;
   } catch (err)  {
-    transaction.rollback();
+    console.error(err);
+    await transaction.rollback();
     return responseMessage.LEAGUE.BET_SAVE_FAIL;
+  };
+};
+
+async function modifyAvatar(userId, leagueId, avatarUrl) {
+  let league;
+  try {
+    league = await LeagueDoc.getLeagueById(leagueId);
+    if (!league) {
+      return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+    }
+  } catch (err) {
+    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+  }
+
+  if (userId !== league.creator) {
+    return responseMessage.LEAGUE.NO_MODIFICATION_RIGHTS;
+  }
+  league.leagueAvatarUrl = avatarUrl;
+  
+  const transaction = new Transaction(true);
+  transaction.insert(schemas.LEAGUE, league);
+
+  try {
+    await transaction.run();
+    return responseMessage.LEAGUE.UPDATE_SUCCESS;
+  } catch (err)  {
+    console.error(err);
+    await transaction.rollback();
+    return responseMessage.LEAGUE.UPDATE_FAIL;
   };
 };
 

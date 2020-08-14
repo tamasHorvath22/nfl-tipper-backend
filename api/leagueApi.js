@@ -100,6 +100,19 @@ module.exports = function(app) {
 
   /* 
     request: 
+      leagueId: leagueId
+      avatarUrl: avatarUrl
+  */
+  app.post('/api/league/chane-avatar', jsonParser, async function (req, res) {
+    res.send(await LeagueService.modifyAvatar(
+      req.decoded.userId,
+      req.body.leagueId,
+      req.body.avatarUrl
+    ));
+  });
+
+  /* 
+    request: 
     { 
       leagueId: leagueId,
       invitedEmail: invitedEmail
