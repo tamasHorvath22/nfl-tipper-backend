@@ -2,6 +2,7 @@ const schemas = require('../common/constants/schemas');
 const bodyParser = require('body-parser');
 const jsonParser = bodyParser.json();
 const LeagueService = require('../services/league-service');
+const BackupService = require('../services/backup-service');
 
 module.exports = function(app) {
   
@@ -110,6 +111,17 @@ module.exports = function(app) {
       req.body.avatarUrl
     ));
   });
+
+  /* 
+    request: 
+      no data
+  */
+  app.post('/api/league/create-backup', jsonParser, async function (req, res) {
+    if (req.decoded.isAdmin) {
+      res.send(await BackupService.saveBackup());
+    }
+  });
+
 
   /* 
     request: 

@@ -11,14 +11,33 @@ module.exports = {
 }
 
 async function saveBackup() {
-  const backup = Backup({
-    confirmEmails: JSON.stringify(await UserDoc.getAllConfirmEmail()),
-    forgotPassword: JSON.stringify(await UserDoc.getAllForgotPassword()),
-    leagueInvitations: JSON.stringify(await LeagueDoc.getAllLeagueInvitations()),
-    leagues: JSON.stringify(await LeagueDoc.getAllLeagues()),
-    users: JSON.stringify(await UserDoc.getAllUsers()),
-    weeekTracker: JSON.stringify(await WeekTrackerDoc.getTracker())
+  const backupStrings = {}
+  const dataFromDb = {}
+  try {
+    dataFromDb.confirmEmails = await UserDoc.getAllConfirmEmail()
+    dataFromDb.forgotPassword = await UserDoc.getAllForgotPassword()
+    dataFromDb.leagueInvitations = await LeagueDoc.getAllLeagueInvitations()
+    dataFromDb.leagues = await LeagueDoc.getAllLeagues()
+    dataFromDb.users = await UserDoc.getAllUsers()
+    dataFromDb.weeekTracker = await WeekTrackerDoc.getTracker()
+  } catch(err) {
+    console.log('get data from database failed, backup failed');
+    console.error(err);
+    return;
+  }
+
+  const keys = Object.keys(dataFromDb);
+  keys.forEach(key => {
+    let tempArray = [];
+    console.log(dataFromDb[key])
+    for (let i = 0; i < dataFromDb[key].length; i++) {
+      tempArray.push(JSON.stringify(dataFromDb[key][i]));
+    }
+    backupStrings[key] = tempArray;
   })
+  backupStrings.week = dataFromDb.weeekTracker;
+
+  const backup = Backup(backupStrings);
   const transaction = new Transaction(true);
   transaction.insert(schemas.BACKUP, backup);
 

@@ -162,7 +162,7 @@ async function newPassword(data) {
     console.log(err);
     return responseMessage.USER.NOT_FOUND;
   }
-  user.password = data.password;
+  user.password = decryptPassword(data.password);
   const transaction = new Transaction(true);
   transaction.insert(schemas.USER, user);
   transaction.remove(schemas.FORGOT_PASSWORD, forgotPassword)
@@ -238,13 +238,16 @@ async function changePassword(username, passwords) {
     }
     let authenticated;
     try {
-      authenticated = await bcrypt.compare(passwords.oldPassword, user.password);
+      authenticated = await bcrypt.compare(
+        decryptPassword(passwords.oldPassword),
+        user.password
+      );
     } catch (err) {
       console.log(err);
       return responseMessage.USER.AUTHENTICATION_ERROR;
     }
     if (authenticated) {
-      user.password = passwords.newPassword
+      user.password = decryptPassword(passwords.newPassword)
       const transaction = new Transaction(true);
       transaction.insert(schemas.USER, user);
 

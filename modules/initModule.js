@@ -16,9 +16,7 @@ module.exports = async function () {
   // backup test
   // const cucc = await BackupService.getLast();
   // console.log(JSON.parse(cucc.users));
+  
   // await BackupService.saveBackup();
-
-  // TODO comment back if goes to live
-  // ScheduleService.scheduleAll();
 
 }
