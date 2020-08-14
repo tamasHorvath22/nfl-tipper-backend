@@ -275,7 +275,6 @@ async function modifyAvatar(userId, leagueId, avatarUrl) {
   } catch (err) {
     return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
   }
-
   if (userId !== league.creator) {
     return responseMessage.LEAGUE.NO_MODIFICATION_RIGHTS;
   }
