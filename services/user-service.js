@@ -319,9 +319,6 @@ async function changeUserData(userId, avatarUrl) {
       return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
     }
     leagues.forEach(league => {
-      // TODO remove year - 1 to production
-      // const currentSeason = league.seasons.find(season => season.year = new Date().getFullYear() - 1);
-      // currentSeason.standings.find(player => user._id.equals(player.id)).avatar = user.avatarUrl;
       league.players.find(player => user._id.equals(player.id)).avatar = user.avatarUrl;
       league.markModified('players');
       transaction.update(schemas.LEAGUE, league._id, league, { new: true });

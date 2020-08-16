@@ -116,7 +116,7 @@ async function sendInvitation(invitorId, inviteData) {
   }
 
   // TODO strange, id did not work, find out why
-  if (league.players.find(user => user.name === invitedUser.username)) {
+  if (league.players.find(user => user.id.equals(invitedUser._id))) {
     return responseMessage.LEAGUE.USER_ALREADY_IN_LEAGUE;
   }
   

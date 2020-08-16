@@ -29,14 +29,13 @@ async function getWeekData() {
 }
 
 async function createNewSeason() {
-  // TODO uncomment this for production
-  // try {
-  //   await resetWeekTrackerForNextYear();
-  // } catch (err) {
-  //   console.error(err);
-  //   console.log('Before new season creation, week tracker reset failed.');
-  //   return;
-  // }
+  try {
+    await resetWeekTrackerForNextYear();
+  } catch (err) {
+    console.error(err);
+    console.log('Before new season creation, week tracker reset failed.');
+    return;
+  }
 
   const leagues = await LeagueDoc.getAllLeagues();
   const transaction = new Transaction(true);
@@ -156,7 +155,7 @@ async function evaluateWeek() {
   const leagues = await LeagueDoc.getAllLeagues();
   const weekResults = await getWeekData();
   const transaction = new Transaction(true);
-  const isSuperBowlWeek = isSuperBowlWeek(weekResults);
+  const isThisSuperBowlWeek = isSuperBowlWeek(weekResults);
   
   leagues.forEach(league => {
     const resultObject = {};
@@ -190,7 +189,7 @@ async function evaluateWeek() {
     currentSeason.standings.forEach(standing => {
       standing.score += resultObject[standing.id];
     })
-    if (isSuperBowlWeek) {
+    if (isThisSuperBowlWeek) {
       currentSeason.isOpen = false;
     }
 
@@ -200,7 +199,7 @@ async function evaluateWeek() {
 
   try {
     await transaction.run();
-    return isSuperBowlWeek;
+    return isThisSuperBowlWeek;
   } catch (err) {
     console.log(err);
     await transaction.rollback();
@@ -238,6 +237,7 @@ async function stepWeekTracker() {
 
 async function resetWeekTrackerForNextYear() {
   const weekTracker = await WeekTrackerDoc.getTracker();
+  weekTracker.year = new Date().getFullYear();
   weekTracker.regOrPst = regOrPst.REGULAR;
   weekTracker.week = 1;
 
