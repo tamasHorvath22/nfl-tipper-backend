@@ -5,8 +5,6 @@ const schemas = require('../common/constants/schemas');
 const WeekTrackerModel = require('../models/weekTracker');
 const regOrPst = require('../common/constants/regular-or-postseason');
 
-let trackerId = null;
-
 module.exports = {
   getTracker: getTracker,
   initWeekTracker: initWeekTracker
@@ -28,7 +26,6 @@ async function initWeekTracker() {
 
     try {
       await transaction.run();
-      trackerId = weekTracker._id;
     } catch (err) {
       console.log(err);
       transaction.rollback();
@@ -39,7 +36,6 @@ async function initWeekTracker() {
 }
 
 async function getTracker() {
-  console.log(trackerId);
   try {
     const tracker = await WeekTracker.find().exec();
     if (tracker) {

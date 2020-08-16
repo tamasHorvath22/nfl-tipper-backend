@@ -2,42 +2,37 @@ const UserDoc = require('../persistence/user-doc');
 const LeagueDoc = require('../persistence/league-doc');
 const WeekTrackerDoc = require('../persistence/week-tracker-doc');
 const Backup = require('../models/backupModel');
+const ConfirmEmail = require('../models/confirmEmailModel');
+const forgotPassword = require('../models/forgotPasswordModel');
+const League = require('../models/leagueModel');
+const WeekTracker = require('../models/weekTracker');
 const Transaction = require('mongoose-transactions');
 const schemas = require('../common/constants/schemas');
 
 module.exports = {
   saveBackup: saveBackup,
-  getLast: getLast
+  restore: restore
 }
 
 async function saveBackup() {
-  const backupStrings = {}
-  const dataFromDb = {}
+  const dataFromDb = {
+    confirmEmails: { schema: schemas.CONFIRM_EMAIL, data: null },
+    forgotPassword: { schema: schemas.FORGOT_PASSWORD, data: null },
+    leagues: { schema: schemas.LEAGUE, data: null },
+    weeekTracker: { schema: schemas.WEEK_TRACKER, data: [] }
+  }
   try {
-    dataFromDb.confirmEmails = await UserDoc.getAllConfirmEmail()
-    dataFromDb.forgotPassword = await UserDoc.getAllForgotPassword()
-    dataFromDb.leagueInvitations = await LeagueDoc.getAllLeagueInvitations()
-    dataFromDb.leagues = await LeagueDoc.getAllLeagues()
-    dataFromDb.users = await UserDoc.getAllUsers()
-    dataFromDb.weeekTracker = await WeekTrackerDoc.getTracker()
+    dataFromDb.confirmEmails.data = await UserDoc.getAllConfirmEmail()
+    dataFromDb.forgotPassword.data = await UserDoc.getAllForgotPassword()
+    dataFromDb.leagues.data = await LeagueDoc.getAllLeagues()
+    dataFromDb.weeekTracker.data.push(await WeekTrackerDoc.getTracker())
   } catch(err) {
-    console.log('get data from database failed, backup failed');
+    console.log('get data from database failed, backup failed!');
     console.error(err);
     return;
   }
 
-  const keys = Object.keys(dataFromDb);
-  keys.forEach(key => {
-    let tempArray = [];
-    console.log(dataFromDb[key])
-    for (let i = 0; i < dataFromDb[key].length; i++) {
-      tempArray.push(dataFromDb[key][i]);
-    }
-    backupStrings[key] = tempArray;
-  })
-  backupStrings.week = dataFromDb.weeekTracker;
-
-  const backup = Backup(backupStrings);
+  const backup = Backup(dataFromDb);
   const transaction = new Transaction(true);
   transaction.insert(schemas.BACKUP, backup);
 
@@ -51,7 +46,40 @@ async function saveBackup() {
   };
 }
 
-async function getLast() {
-  const all = await Backup.find({});
-  return all[all.length - 1];
-} 
+async function restore() {
+  let backup;
+  try {
+    const all = await Backup.find({}).sort({ _id: -1 }).limit(1);
+    backup = all[0];
+  } catch (err) {
+    console.error(err);
+    return
+  }
+  const docs = [
+    { key: 'confirmEmails', model: ConfirmEmail, schema: schemas.CONFIRM_EMAIL },
+    { key: 'forgotPassword', model: forgotPassword, schema: schemas.FORGOT_PASSWORD },
+    { key: 'leagues', model: League, schema: schemas.LEAGUE },
+    { key: 'weeekTracker', model: WeekTracker, schema: schemas.WEEK_TRACKER }
+  ];
+
+  docs.forEach(doc => {
+    doc.model.remove().exec();
+  })
+  
+  const transaction = new Transaction(true);
+  
+  docs.forEach(doc => {
+    backup[doc.key].data.forEach(elem => {
+      transaction.insert(doc.schema, elem);
+    })
+  })
+
+  try {
+    await transaction.run();
+    console.log('restore done')
+  } catch (err)  {
+    console.error(err);
+    await transaction.rollback();
+    console.log('Restore error!')
+  };
+}

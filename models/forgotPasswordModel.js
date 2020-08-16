@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const schemas = require('../common/constants/schemas');
-
 const Schema = mongoose.Schema;
 
 let forgotPasswordSchema = new Schema({
