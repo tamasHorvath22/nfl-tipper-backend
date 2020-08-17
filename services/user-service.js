@@ -192,7 +192,6 @@ async function checkPassToken(hash) {
 }
 
 async function confirmEmail(hash) {
-  console.log('confim email function called');
   let confirmModel;
   try {
     confirmModel = await EmailConfirm.findById(hash).exec();
@@ -224,10 +223,8 @@ async function confirmEmail(hash) {
 
   try {
     await transaction.run();
-    console.log('email confirmed')
     return responseMessage.USER.EMAIL_CONFIRMED;
   } catch (err)  {
-    console.log('conirm email error');
     console.error(err);
     transaction.rollback();
     return responseMessage.USER.EMAIL_CONFIRM_FAIL;

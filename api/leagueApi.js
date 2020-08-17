@@ -62,16 +62,6 @@ module.exports = function(app) {
     request: 
     { 
       leagueId: leagueId
-    }
-  */
-  app.post('/api/league/get-season', jsonParser, async function (req, res) {
-    res.send(await LeagueService.getSeasonData(req.decoded.userId, req.body.leagueId));
-  });
-
-  /* 
-    request: 
-    { 
-      leagueId: leagueId
       week: week
     }
   */
@@ -104,11 +94,12 @@ module.exports = function(app) {
       leagueId: leagueId
       avatarUrl: avatarUrl
   */
-  app.post('/api/league/chane-avatar', jsonParser, async function (req, res) {
-    res.send(await LeagueService.modifyAvatar(
+  app.post('/api/league/modify-avatar', jsonParser, async function (req, res) {
+    res.send(await LeagueService.modifyLeague(
       req.decoded.userId,
       req.body.leagueId,
-      req.body.avatarUrl
+      req.body.avatarUrl,
+      req.body.leagueName
     ));
   });
 

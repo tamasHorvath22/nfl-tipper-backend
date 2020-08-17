@@ -16,11 +16,10 @@ module.exports = {
   getLeague: getLeague,
   sendInvitation: sendInvitation,
   acceptInvitaion: acceptInvitaion,
-  getSeasonData: getSeasonData,
   saveWeekBets: saveWeekBets,
   triggerManually: triggerManually,
   createNewSeason: createNewSeason,
-  modifyAvatar: modifyAvatar
+  modifyLeague: modifyLeague
 }
 
 async function createLeague(creator, leagueData) {
@@ -196,36 +195,6 @@ async function acceptInvitaion(invitedUserId, leagueId) {
   };
 };
 
-async function getSeasonData(userId, leagueId) {
-  let league;
-  try {
-    league = await LeagueDoc.getLeagueById(leagueId);
-    if (!league) {
-      return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
-    }
-  } catch (err) {
-    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
-  }
-  // TODO remove previous year (-1)
-  const currentYear = new Date().getFullYear() - 1;
-  const currentSeason = league.seasons.find(season => season.year === currentYear);
-
-  let lastWeek;
-  if (currentSeason.weeks.length) {
-    lastWeek = currentSeason.weeks[currentSeason.weeks.length - 1];
-    if (!lastWeek.isOpen) {
-      return currentSeason;
-    }
-  }
-
-  // const week = currentSeason.weeks.find(week => week.number === data.weekNumber);
-  lastWeek.games.forEach(game => {
-    const userBet = game.bets.find(bet => bet.id.equals(userId));
-    game.bets = [userBet];
-  })
-  return currentSeason
-};
-
 async function saveWeekBets(userId, leagueId, incomingWeek) {
   let league;
   try {
@@ -265,7 +234,7 @@ async function saveWeekBets(userId, leagueId, incomingWeek) {
   };
 };
 
-async function modifyAvatar(userId, leagueId, avatarUrl) {
+async function modifyLeague(userId, leagueId, avatarUrl, leagueName) {
   let league;
   try {
     league = await LeagueDoc.getLeagueById(leagueId);
@@ -279,6 +248,7 @@ async function modifyAvatar(userId, leagueId, avatarUrl) {
     return responseMessage.LEAGUE.NO_MODIFICATION_RIGHTS;
   }
   league.leagueAvatarUrl = avatarUrl;
+  league.name = leagueName;
   
   const transaction = new Transaction(true);
   transaction.insert(schemas.LEAGUE, league);
