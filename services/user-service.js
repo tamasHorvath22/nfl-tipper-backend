@@ -195,6 +195,7 @@ async function confirmEmail(hash) {
   let confirmModel;
   try {
     confirmModel = await EmailConfirm.findById(hash).exec();
+    console.log(confirmModel);
     if (!confirmModel) {
       return responseMessage.USER.NO_EMAIL_HASH_FOUND;
     }
@@ -206,6 +207,7 @@ async function confirmEmail(hash) {
   let user = null
   try {
     user = await UserDoc.getUserById(confirmModel.userId);
+    console.log(user);
     if (!user) {
       return responseMessage.USER.NOT_FOUND;
     }
@@ -216,11 +218,12 @@ async function confirmEmail(hash) {
   }
   
   const transaction = new Transaction(true);
-  transaction.remove(schemas.CONFIRM_EMAIL, confirmModel)
+  transaction.remove(schemas.CONFIRM_EMAIL, confirmModel._id);
   transaction.insert(schemas.USER, user);
 
   try {
     await transaction.run();
+    console.log('email confirmed')
     return responseMessage.USER.EMAIL_CONFIRMED;
   } catch (err)  {
     console.error(err);
