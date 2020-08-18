@@ -156,6 +156,10 @@ async function evaluateWeek() {
   const weekResults = await getWeekData();
   const transaction = new Transaction(true);
   const isThisSuperBowlWeek = isSuperBowlWeek(weekResults);
+
+  if (!leagues[0].seasons.find(season => season.year === weekResults.year).isOpen) {
+    return;
+  }
   
   leagues.forEach(league => {
     const resultObject = {};
