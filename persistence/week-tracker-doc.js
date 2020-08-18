@@ -14,6 +14,7 @@ async function initWeekTracker() {
   const trackers = await getAllTracker();
 
   if (!trackers || !trackers.length) {
+    // TODO remove -1 for production
     const currentYear = new Date().getFullYear() - 1;
     let weekTracker = WeekTrackerModel({
       year: currentYear,
