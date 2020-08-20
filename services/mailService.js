@@ -24,7 +24,7 @@ async function send(userData, mailType) {
   try {
     await mailgun.messages().send(data);
   } catch (err) {
-    console.log(err);
+    console.error(err);
     return responseMessage.EMAIL.SEND_FAIL;
   }
 }

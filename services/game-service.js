@@ -93,7 +93,7 @@ async function createNewWeekAndGames() {
   try {
     await transaction.run();
   } catch (err) {
-    console.log(err);
+    console.error(err);
     await transaction.rollback();
   }
 }
@@ -114,7 +114,7 @@ async function createNewWeekForLeague(leagueId) {
   try {
     await transaction.run();
   } catch (err) {
-    console.log(err);
+    console.error(err);
     transaction.rollback();
   }
 }
@@ -205,7 +205,7 @@ async function evaluateWeek() {
     await transaction.run();
     return isThisSuperBowlWeek;
   } catch (err) {
-    console.log(err);
+    console.error(err);
     await transaction.rollback();
   }
 }
@@ -234,7 +234,7 @@ async function stepWeekTracker() {
   try {
     await transaction.run();
   } catch (err)  {
-    console.log(err);
+    console.error(err);
     await transaction.rollback();
   };
 }

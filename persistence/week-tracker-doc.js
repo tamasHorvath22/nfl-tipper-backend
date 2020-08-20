@@ -28,7 +28,7 @@ async function initWeekTracker() {
     try {
       await transaction.run();
     } catch (err) {
-      console.log(err);
+      console.error(err);
       transaction.rollback();
     }
   } else {
@@ -44,7 +44,7 @@ async function getTracker() {
     }
     return null;
   } catch (err) {
-    console.log(err);
+    console.error(err);
     console.log('week tracker loading error');
     return null;
   }
@@ -58,7 +58,7 @@ async function getAllTracker() {
     }
     return null;
   } catch (err) {
-    console.log(err);
+    console.error(err);
     console.log('finding all week trackers error');
     return null;
   }

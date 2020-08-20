@@ -57,7 +57,7 @@ async function closeWeek() {
     console.log('weeks close success');
   } catch (err)  {
     await transaction.rollback();
-    console.log(err);
+    console.error(err);
     console.log('week close fail');
   };
 }
@@ -72,7 +72,7 @@ async function evaluateGames() {
     console.log('week evaluation success');
     return isSuperBowlWeek;
   } catch (err) {
-    console.log(err);
+    console.error(err);
     console.log('week evaluation fail');
     return true;
   }
@@ -87,7 +87,7 @@ async function stepWeek() {
     await GameService.stepWeekTracker();
     console.log('week tracker step success');
   } catch (err) {
-    console.log(err);
+    console.error(err);
     console.log('week tracker step fail');
   }
 }
@@ -101,7 +101,7 @@ async function createNewWeek() {
     await GameService.createNewWeekAndGames();
     console.log('new week creation success');
   } catch (err) {
-    console.log(err);
+    console.error(err);
     console.log('new week creation fail');
   }
 }

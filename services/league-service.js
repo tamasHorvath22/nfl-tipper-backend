@@ -161,6 +161,7 @@ async function acceptInvitaion(invitedUserId, leagueId) {
       return responseMessage.USER.NOT_FOUND;
     }
   } catch (err) {
+    console.error(err);
     return responseMessage.USER.NOT_FOUND;
   }
 
