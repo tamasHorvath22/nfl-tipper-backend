@@ -33,6 +33,7 @@ describe('User service tests', () => {
       await user.save();
       await emailConfirm.save();
     });
+
     it('starts with $, returns username taken', async () => {
       const result = await UserService.register({
         username: '$username',
@@ -41,6 +42,7 @@ describe('User service tests', () => {
       })
       expect(result).to.equal(responseMessage.USER.USERNAME_TAKEN);
     });
+
     it('username is taken', async () => {
       const users = await User.find({}).exec();
       const user = users[0];
@@ -52,6 +54,7 @@ describe('User service tests', () => {
       })
       expect(result).to.equal(responseMessage.USER.USERNAME_TAKEN);
     });
+
     it('email is taken', async () => {
       const users = await User.find({}).exec();
       const user = users[0];
@@ -63,6 +66,7 @@ describe('User service tests', () => {
       })
       expect(result).to.equal(responseMessage.USER.EMAIL_TAKEN);
     });
+    
     it('user successfully registered', async () => {
       const username = Math.random().toString(36).substring(7);
       const email = `${Math.random().toString(36).substring(7)}@some-email.com`;
@@ -140,6 +144,51 @@ describe('User service tests', () => {
       const result = await UserService.resetPassword(user.email);
       expect(result).to.equal(responseMessage.USER.RESET_PASSWORD_EMAIL_SENT);
     });
+
+    it('no password hash found', async () => {
+      const result = await UserService.newPassword({ hash: '5f4272144382585e0a974gx5', password: 'password' });
+      expect(result).to.equal(responseMessage.COMMON.ERROR);
+    });
+
+    it('password hash is null', async () => {
+      const result = await UserService.newPassword({ hash: null, password: 'password' });
+      expect(result).to.equal(responseMessage.FORGET_PASSWORD.NO_REQUEST_FOUND);
+    });
+
+    it('data object is null', async () => {
+      const result = await UserService.newPassword(null);
+      expect(result).to.equal(responseMessage.COMMON.ERROR);
+    });
+
+    it('password reset success', async () => {
+      const forgotPasswords = await ForgotPassword.find({}).exec();
+      const last = forgotPasswords[forgotPasswords.length - 1];
+      const result = await UserService.newPassword({
+        hash: last._id,
+        password: CryptoJS.AES.encrypt('new_password', process.env.PASSWORD_SECRET_KEY).toString() 
+      });
+      expect(result).to.equal(responseMessage.USER.RESET_PASSWORD_SUCCESS);
+    });
+
+    it('check password hash -> correct hash', async () => {
+      const forgotPasswords = await ForgotPassword.find({}).exec();
+      const last = forgotPasswords[forgotPasswords.length - 1];
+      const result = await UserService.checkPassToken(last._id);
+      expect(result).to.equal(responseMessage.USER.HASH_FOUND);
+    });
+
+    it('check password hash -> hash is null', async () => {
+      const result = await UserService.checkPassToken(null);
+      expect(result).to.equal(responseMessage.USER.NO_HASH_FOUND);
+    });
+
+    it('check password hash -> wrong hash id', async () => {
+      const users = await User.find({}).exec();
+      const last = users[users.length - 1];
+      const result = await UserService.checkPassToken(last._id);
+      expect(result).to.equal(responseMessage.USER.NO_HASH_FOUND);
+    });
+
 
   });
 });

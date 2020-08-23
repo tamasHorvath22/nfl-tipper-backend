@@ -8,7 +8,10 @@ const schemas = require('../common/constants/schemas');
 module.exports = {
   connectToDatabase: connectToDatabase,
   saveNewUserToDb: saveNewUserToDb,
-  createPasswordReset: createPasswordReset
+  createPasswordReset: createPasswordReset,
+  createNewPassword: createNewPassword,
+  confirmEmail: confirmEmail,
+  changePassword: changePassword
 }
 
 function connectToDatabase(connectionString) {
@@ -48,5 +51,48 @@ async function createPasswordReset(forgotPassword) {
     transaction.rollback();
     return false;
   };
+}
 
+async function createNewPassword(user, forgotPassword) {
+  const transaction = new Transaction(true);
+  transaction.insert(schemas.USER, user);
+  transaction.remove(schemas.FORGOT_PASSWORD, forgotPassword._id);
+
+  try {
+    await transaction.run();
+    return responseMessage.USER.RESET_PASSWORD_SUCCESS;
+  } catch (err)  {
+    console.error(err);
+    transaction.rollback();
+    return responseMessage.USER.RESET_PASSWORD_FAIL;
+  };
+}
+
+async function confirmEmail(user, confirmEmail) {
+  const transaction = new Transaction(true);
+  transaction.remove(schemas.CONFIRM_EMAIL, confirmEmail._id);
+  transaction.insert(schemas.USER, user);
+
+  try {
+    await transaction.run();
+    return responseMessage.USER.EMAIL_CONFIRMED;
+  } catch (err)  {
+    console.error(err);
+    transaction.rollback();
+    return responseMessage.USER.EMAIL_CONFIRM_FAIL;
+  };
+}
+
+async function changePassword(user) {
+  const transaction = new Transaction(true);
+  transaction.insert(schemas.USER, user);
+
+  try {
+    await transaction.run();
+    return true;
+  } catch (err)  {
+    console.error(err);
+    transaction.rollback();
+    return false;
+  };
 }

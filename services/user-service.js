@@ -123,6 +123,9 @@ async function resetPassword(email) {
 }
 
 async function newPassword(data) {
+  if (!data) {
+    return responseMessage.COMMON.ERROR;
+  }
   let user;
   let forgotPassword;
   try {
@@ -136,23 +139,15 @@ async function newPassword(data) {
   }
   try {
     user = await UserDoc.getUserByEmail(forgotPassword.email);
+    if (!user) {
+      return responseMessage.USER.NOT_FOUND;
+    }
   } catch (err) {
     console.error(err);
     return responseMessage.USER.NOT_FOUND;
   }
   user.password = decryptPassword(data.password);
-  const transaction = new Transaction(true);
-  transaction.insert(schemas.USER, user);
-  transaction.remove(schemas.FORGOT_PASSWORD, forgotPassword)
-  
-  try {
-    await transaction.run();
-    return responseMessage.USER.RESET_PASSWORD_SUCCESS;
-  } catch (err)  {
-    console.error(err);
-    transaction.rollback();
-    return responseMessage.USER.RESET_PASSWORD_FAIL;
-  };
+  return await DbTransactions.createNewPassword(user, forgotPassword);
 }
 
 async function checkPassToken(hash) {
@@ -180,7 +175,6 @@ async function confirmEmail(hash) {
     console.error(err);
     return responseMessage.USER.NO_EMAIL_HASH_FOUND;
   }
-
   let user = null
   try {
     user = await UserDoc.getUserById(confirmModel.userId);
@@ -192,19 +186,7 @@ async function confirmEmail(hash) {
     console.error(err);
     return responseMessage.USER.NOT_FOUND;
   }
-  
-  const transaction = new Transaction(true);
-  transaction.remove(schemas.CONFIRM_EMAIL, confirmModel._id);
-  transaction.insert(schemas.USER, user);
-
-  try {
-    await transaction.run();
-    return responseMessage.USER.EMAIL_CONFIRMED;
-  } catch (err)  {
-    console.error(err);
-    transaction.rollback();
-    return responseMessage.USER.EMAIL_CONFIRM_FAIL;
-  };
+  return DbTransactions.confirmEmail(user, confirmModel);
 }
 
 async function changePassword(username, passwords) {
@@ -226,22 +208,16 @@ async function changePassword(username, passwords) {
     }
     if (authenticated) {
       user.password = decryptPassword(passwords.newPassword)
-      const transaction = new Transaction(true);
-      transaction.insert(schemas.USER, user);
-
-      try {
-        await transaction.run();
+      const userSaveResult = await DbTransactions.changePassword(user);
+      if (userSaveResult) {
         try {
           return { token: jwt.sign(getUserToToken(user), config.getJwtPrivateKey()) };
         } catch (err) {
           console.error(err);
           return responseMessage.USER.TOKEN_CREATE_ERROR;
         }
-      } catch (err)  {
-        console.error(err);
-        transaction.rollback();
-        return responseMessage.USER.RESET_PASSWORD_FAIL;
-      };
+      }
+      return responseMessage.USER.RESET_PASSWORD_FAIL;
     } else {
       return responseMessage.USER.WRONG_USERNAME_OR_PASSWORD;
     }
