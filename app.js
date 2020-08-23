@@ -5,10 +5,10 @@ const mongoose = require('mongoose');
 const config = require('./config');
 const initModule = require('./modules/initModule');
 const cors = require('cors')
+const Transactions = require('./persistence/transactions');
 
 app.use(cors())
-mongoose.set('useCreateIndex', true);
-mongoose.connect(config.getDbConnectionString(), { useUnifiedTopology: true, useNewUrlParser: true });
+Transactions.connectToDatabase(config.getDbConnectionString());
 
 api(app, express.Router());
 initModule();

@@ -1,0 +1,145 @@
+const expect = require('chai').expect;
+const UserService = require('../services/user-service');
+const responseMessage = require('../common/constants/api-response-messages');
+const CryptoJS = require('crypto-js');
+const mongoose = require('mongoose');
+const config = require('../config');
+const User = require('../models/userModel');
+const ForgotPassword = require('../models/forgotPasswordModel');
+const EmailConfirm = require('../models/confirmEmailModel');
+const jwt = require('jsonwebtoken');
+
+
+describe('User service tests', () => {
+  mongoose.connect(config.getTestDbConnectionString(),{ useUnifiedTopology: true, useNewUrlParser: true });
+
+  describe('Registration tests', () => {
+    before(async () => {
+      await User.remove({});
+      const user = User({
+        username: 'username',
+        password: 'password',
+        email: 'test-email@email.com',
+        leagues: [],
+        invitations: [],
+        avatarUrl: null,
+        isEmailConfirmed: false,
+        isAdmin: false
+      })
+      const emailConfirm = EmailConfirm({
+        email: user.email,
+        userId: user._id
+      })
+      await user.save();
+      await emailConfirm.save();
+    });
+    it('starts with $, returns username taken', async () => {
+      const result = await UserService.register({
+        username: '$username',
+        password: 'password',
+        email: 'em@ail.com'
+      })
+      expect(result).to.equal(responseMessage.USER.USERNAME_TAKEN);
+    });
+    it('username is taken', async () => {
+      const users = await User.find({}).exec();
+      const user = users[0];
+
+      const result = await UserService.register({
+        username: user.username,
+        password: CryptoJS.AES.encrypt('password', process.env.PASSWORD_SECRET_KEY).toString(),
+        email: 'em@ail.com'
+      })
+      expect(result).to.equal(responseMessage.USER.USERNAME_TAKEN);
+    });
+    it('email is taken', async () => {
+      const users = await User.find({}).exec();
+      const user = users[0];
+
+      const result = await UserService.register({
+        username: Math.random().toString(36).substring(7),
+        password: CryptoJS.AES.encrypt('password', process.env.PASSWORD_SECRET_KEY).toString(),
+        email: user.email
+      })
+      expect(result).to.equal(responseMessage.USER.EMAIL_TAKEN);
+    });
+    it('user successfully registered', async () => {
+      const username = Math.random().toString(36).substring(7);
+      const email = `${Math.random().toString(36).substring(7)}@some-email.com`;
+
+      const result = await UserService.register({
+        username: username,
+        password: CryptoJS.AES.encrypt('password', process.env.PASSWORD_SECRET_KEY).toString(),
+        email: email
+      })
+      const savedUser = await User.find({ username: username });
+      const emailConfirm = await EmailConfirm.find({ email: email});
+
+      expect(result).to.equal(responseMessage.USER.SUCCESSFUL_REGISTRATION);
+      expect(emailConfirm.userId).to.equal(savedUser._id);
+    });
+  });
+  
+  describe('login tests', () => {
+    it('email is not confirmed', async () => {
+      const result = await UserService.login(
+        {
+          username: 'username',
+          password: CryptoJS.AES.encrypt('password', process.env.PASSWORD_SECRET_KEY).toString() 
+        }
+      );
+      expect(result).to.equal(responseMessage.USER.EMAIL_NOT_CONFIRMED);
+    });
+
+    it('successful login', async () => {
+      await User.update({ username: 'username' }, { $set: { isEmailConfirmed: true }});
+      const result = await UserService.login(
+        {
+          username: 'username',
+          password: CryptoJS.AES.encrypt('password', process.env.PASSWORD_SECRET_KEY).toString() 
+        }
+      );
+      expect(result.hasOwnProperty('token')).to.be.true;
+    });
+
+    it('wrong password', async () => {
+      const result = await UserService.login(
+        {
+          username: 'username',
+          password: CryptoJS.AES.encrypt('password_1', process.env.PASSWORD_SECRET_KEY).toString() 
+        }
+      );
+      expect(result).to.equal(responseMessage.USER.WRONG_USERNAME_OR_PASSWORD);
+    });
+
+    it('not existing user', async () => {
+      const result = await UserService.login(
+        {
+          username: 'username_1',
+          password: CryptoJS.AES.encrypt('password_1', process.env.PASSWORD_SECRET_KEY).toString() 
+        }
+      );
+      expect(result).to.equal(responseMessage.USER.WRONG_USERNAME_OR_PASSWORD);
+    });
+  });
+
+  describe('reset password tests', () => {
+    it('no user found by email', async () => {
+      const result = await UserService.resetPassword('wrong@email.valami');
+      expect(result).to.equal(responseMessage.USER.NOT_FOUND);
+    });
+
+    it('email is null', async () => {
+      const result = await UserService.resetPassword(null);
+      expect(result).to.equal(responseMessage.USER.NOT_FOUND);
+    });
+
+    it('password reset mail successfully sent', async () => {
+      const users = await User.find({}).exec();
+      const user = users[0];
+      const result = await UserService.resetPassword(user.email);
+      expect(result).to.equal(responseMessage.USER.RESET_PASSWORD_EMAIL_SENT);
+    });
+
+  });
+});

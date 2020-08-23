@@ -23,7 +23,6 @@ module.exports = {
 }
 
 async function createLeague(creator, leagueData) {
-  const currentYear = new Date().getFullYear();
   let user;
   try {
     user = await UserDoc.getUserById(creator.userId);
@@ -34,28 +33,7 @@ async function createLeague(creator, leagueData) {
     return responseMessage.USER.NOT_FOUND;
   }
 
-  let league = League({
-    name: leagueData.name,
-    creator: creator.userId,
-    invitations: [],
-    players: [{ id: user._id, name: user.username, avatar: user.avatarUrl }],
-    seasons: [
-      Season({
-        // TODO remove previous year (-1)
-        year: currentYear - 1,
-        // TODO remove previous year (-1)
-        numberOfSeason: currentYear - 1 - 1919,
-        // TODO remove previous year (-1)
-        numberOfSuperBowl: currentYear - 1 - 1965,
-        weeks: [],
-        standings: [{ id: user._id, name: user.username, score: 0 }],
-        isOpen: true,
-        isCurrent: true
-      })
-    ],
-    leagueAvatarUrl: leagueData.leagueAvatarUrl || null
-  });
-
+  const league = buildLeague(user, leagueData)
   user.leagues.push({ leagueId: league._id, name: league.name });
 
   const transaction = new Transaction(true);
@@ -73,6 +51,30 @@ async function createLeague(creator, leagueData) {
   };
   await GameService.createNewWeekForLeague(league._id);
   return user;
+}
+
+function buildLeague(user, leagueData) {
+  // TODO remove previous year (-1)
+  const currentYear = new Date().getFullYear() -1;
+
+  return League({
+    name: leagueData.name,
+    creator: user._id,
+    invitations: [],
+    players: [{ id: user._id, name: user.username, avatar: user.avatarUrl }],
+    seasons: [
+      Season({
+        year: currentYear,
+        numberOfSeason: currentYear - 1919,
+        numberOfSuperBowl: currentYear - 1965,
+        weeks: [],
+        standings: [{ id: user._id, name: user.username, score: 0 }],
+        isOpen: true,
+        isCurrent: true
+      })
+    ],
+    leagueAvatarUrl: leagueData.leagueAvatarUrl || null
+  });
 }
 
 async function getLeagueNames(idList) {
@@ -114,7 +116,6 @@ async function sendInvitation(invitorId, inviteData) {
     return responseMessage.COMMON.ERROR;
   }
 
-  // TODO strange, id did not work, find out why
   if (league.players.find(user => user.id.equals(invitedUser._id))) {
     return responseMessage.LEAGUE.USER_ALREADY_IN_LEAGUE;
   }

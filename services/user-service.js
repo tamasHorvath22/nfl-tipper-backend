@@ -12,6 +12,7 @@ const Transaction = require('mongoose-transactions');
 const UserDoc = require('../persistence/user-doc');
 const LeagueDoc = require('../persistence/league-doc');
 const CryptoJS = require('crypto-js');
+const DbTransactions = require('../persistence/transactions');
 
 module.exports = {
   login: login,
@@ -76,36 +77,20 @@ async function register(userDto) {
     isEmailConfirmed: false,
     isAdmin: false
   });
-
   const emailConfirm = EmailConfirm({
     email: userDto.email,
     userId: user._id
   })
-  const transaction = new Transaction(true);
-  transaction.insert(schemas.CONFIRM_EMAIL, emailConfirm);
-  transaction.insert(schemas.USER, user);
-
-  try {
-    await transaction.run();
-  } catch (err)  {
-    console.error(err);
-    transaction.rollback();
-    let source;
-    if (err.error.keyPattern.hasOwnProperty('username')) {
-      source = responseMessage.USER.USERNAME_TAKEN;
-    } else if (err.error.keyPattern.hasOwnProperty('email')) {
-      source = responseMessage.USER.EMAIL_TAKEN;
-    } else {
-      source = responseMessage.USER.UNSUCCESSFUL_REGISTRATION;
-    }
-    return source;
-  };
-  const userEmilData = {
+  const dbResponse = await DbTransactions.saveNewUserToDb(user, emailConfirm);
+  if (dbResponse !== responseMessage.USER.SUCCESSFUL_REGISTRATION) {
+    return dbResponse;
+  }
+  const userEmailData = {
     $emailAddress: user.email,
     $username: user.username,
     $url: `${process.env.UI_BASE_URL}${process.env.CONFIRM_EMAIL_URL}/${emailConfirm._id}`
   }
-  await MailService.send(userEmilData, mailType.EMAIL_CONFIRM); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
+  await MailService.send(userEmailData, mailType.EMAIL_CONFIRM);
   return responseMessage.USER.SUCCESSFUL_REGISTRATION;
 }
 
@@ -123,25 +108,18 @@ async function resetPassword(email) {
   const forgotPassword = ForgotPassword({
     email: email
   })
-  
-  const transaction = new Transaction(true);
-  transaction.insert(schemas.FORGOT_PASSWORD, forgotPassword);
-  try {
-    await transaction.run();
+  const isResetPasswordSuccess = await DbTransactions.createPasswordReset(forgotPassword);
+  if (isResetPasswordSuccess) {
     const userEmailData = {
       $emailAddress: email,
       $username: user.username,
       $url: `${process.env.UI_BASE_URL}${process.env.RESET_PASSWORD_URL}/${forgotPassword._id}`
     }
-
-    await MailService.send(userEmailData, mailType.FORGOT_PASSWORD); // EZ A JÓ EMAIL KÜLDŐ!!!!!!!!
-
+    await MailService.send(userEmailData, mailType.FORGOT_PASSWORD);
     return responseMessage.USER.RESET_PASSWORD_EMAIL_SENT;
-  } catch (err)  {
-    console.error(err);
-    transaction.rollback();
+  } else {
     return responseMessage.USER.RESET_PASSWORD_EMAIL_FAIL;
-  };
+  }
 }
 
 async function newPassword(data) {

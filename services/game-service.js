@@ -151,7 +151,36 @@ function initNewWeek(weekData, league) {
   return week;
 }
 
+async function randomiseBets() {
+  // TODO this fuction is for testing
+  const leagues = await LeagueDoc.getAllLeagues();
+  const transaction = new Transaction(true);
+
+  leagues.forEach(league => {
+    const currentSeason = league.seasons.find(season => season.year === 2019);
+    const currWeek = currentSeason.weeks[currentSeason.weeks.length - 1];
+    currWeek.games.forEach(game => {
+      game.bets.forEach(bet => {
+        bet.bet = Math.random() > 0.5 ? winnerTeam.HOME : winnerTeam.AWAY
+      })
+    })
+    league.markModified('seasons')
+    transaction.insert(schemas.LEAGUE, league);
+  })
+
+  try {
+    await transaction.run();
+  } catch (err) {
+    console.error(err);
+    await transaction.rollback();
+  }
+
+}
+
 async function evaluateWeek() {
+  // TODO this fuction is for testing, remove calling it in production
+  // await randomiseBets();
+
   const leagues = await LeagueDoc.getAllLeagues();
   const weekResults = await getWeekData();
   const transaction = new Transaction(true);

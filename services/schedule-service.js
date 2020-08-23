@@ -3,6 +3,7 @@ const LeagueDoc = require('../persistence/league-doc');
 const Transaction = require('mongoose-transactions');
 const schemas = require('../common/constants/schemas');
 const GameService = require('../services/game-service');
+const sleep = require('util').promisify(setTimeout)
 
 module.exports = {
   scheduleAll: scheduleAll,
@@ -111,10 +112,12 @@ async function triggerManually() {
   const isSuperBowlWeek = await evaluateGames();
   if (!isSuperBowlWeek) {
     await stepWeek();
-    setTimeout(async () => {
-      await createNewWeek();
-    }, 10000)
+    console.log('sleep starts')
+    await sleep(10000);
+    console.log('sleep ends')
+    await createNewWeek();
   }
+  return 'done';
 }
 
 function scheduleAll() {
