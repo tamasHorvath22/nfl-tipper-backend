@@ -9,7 +9,8 @@ const mailType = require('../common/constants/email-type');
 const MailService = require('../services/mailService');
 const UserDoc = require('../persistence/user-doc');
 const CryptoJS = require('crypto-js');
-const DbTransactions = require('../persistence/transactions');
+const DbTransactions = require('../persistence/user.transactions');
+const LeagueDoc = require('../persistence/league-doc');
 
 module.exports = {
   login: login,
@@ -251,7 +252,27 @@ async function changeUserData(userId, avatarUrl) {
     return responseMessage.USER.NOT_FOUND;
   }  
   user.avatarUrl = avatarUrl;
-  return await DbTransactions.changeUserData(user);
+  let leagues = null;
+  if (user.leagues.length) {
+    let leagueIds = [];
+    user.leagues.forEach(league => {
+      leagueIds.push(league.leagueId);
+    })
+
+    try {
+      leagues = await LeagueDoc.getLeaguesByIds(leagueIds);
+      if (!leagues) {
+        return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+      }
+    } catch (err) {
+      console.error(err);
+      return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+    }
+    leagues.forEach(league => {
+      league.players.find(player => user._id.equals(player.id)).avatar = user.avatarUrl;
+    })
+  }
+  return await DbTransactions.changeUserData(user, leagues);
 }
 
 function getUserToToken(user) {

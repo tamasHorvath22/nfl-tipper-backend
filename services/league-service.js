@@ -6,7 +6,7 @@ const LeagueDoc = require('../persistence/league-doc');
 const GameService = require('../services/game-service');
 const mongoose = require('mongoose');
 const ScheduleService = require('../services/schedule-service');
-const DbTransactions = require('../persistence/transactions');
+const DbTransactions = require('../persistence/league.transactions');
 
 
 module.exports = {
