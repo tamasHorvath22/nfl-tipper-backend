@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const Transaction = require('mongoose-transactions');
 const responseMessage = require('../common/constants/api-response-messages');
 const schemas = require('../common/constants/schemas');
+const LeagueDoc = require('../persistence/league-doc');
 
 
 module.exports = {
@@ -11,7 +12,8 @@ module.exports = {
   createPasswordReset: createPasswordReset,
   createNewPassword: createNewPassword,
   confirmEmail: confirmEmail,
-  changePassword: changePassword
+  changePassword: changePassword,
+  changeUserData: changeUserData
 }
 
 function connectToDatabase(connectionString) {
@@ -94,5 +96,42 @@ async function changePassword(user) {
     console.error(err);
     transaction.rollback();
     return false;
+  };
+}
+
+async function changeUserData(user) {
+  const transaction = new Transaction(true);
+  transaction.insert(schemas.USER, user);
+
+  if (user.leagues.length) {
+    let leagueIds = [];
+    user.leagues.forEach(league => {
+      leagueIds.push(league.leagueId);
+    })
+
+    let leagues;
+    try {
+      leagues = await LeagueDoc.getLeaguesByIds(leagueIds);
+      if (!leagues) {
+        return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+      }
+    } catch (err) {
+      console.error(err);
+      return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+    }
+    leagues.forEach(league => {
+      league.players.find(player => user._id.equals(player.id)).avatar = user.avatarUrl;
+      league.markModified('players');
+      transaction.update(schemas.LEAGUE, league._id, league, { new: true });
+    })
+  }
+
+  try {
+    await transaction.run();
+    return user;
+  } catch (err)  {
+    console.error(err);
+    transaction.rollback();
+    return responseMessage.USER.MODIFY_FAIL;
   };
 }

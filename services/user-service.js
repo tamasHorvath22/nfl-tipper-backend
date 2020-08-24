@@ -6,11 +6,8 @@ const jwt = require('jsonwebtoken');
 const config = require('../config');
 const responseMessage = require('../common/constants/api-response-messages');
 const mailType = require('../common/constants/email-type');
-const schemas = require('../common/constants/schemas');
 const MailService = require('../services/mailService');
-const Transaction = require('mongoose-transactions');
 const UserDoc = require('../persistence/user-doc');
-const LeagueDoc = require('../persistence/league-doc');
 const CryptoJS = require('crypto-js');
 const DbTransactions = require('../persistence/transactions');
 
@@ -196,35 +193,36 @@ async function changePassword(username, passwords) {
     if (!user) {
       return responseMessage.USER.NOT_FOUND;
     }
-    let authenticated;
-    try {
-      authenticated = await bcrypt.compare(
-        decryptPassword(passwords.oldPassword),
-        user.password
-      );
-    } catch (err) {
-      console.error(err);
-      return responseMessage.USER.AUTHENTICATION_ERROR;
-    }
-    if (authenticated) {
-      user.password = decryptPassword(passwords.newPassword)
-      const userSaveResult = await DbTransactions.changePassword(user);
-      if (userSaveResult) {
-        try {
-          return { token: jwt.sign(getUserToToken(user), config.getJwtPrivateKey()) };
-        } catch (err) {
-          console.error(err);
-          return responseMessage.USER.TOKEN_CREATE_ERROR;
-        }
-      }
-      return responseMessage.USER.RESET_PASSWORD_FAIL;
-    } else {
-      return responseMessage.USER.WRONG_USERNAME_OR_PASSWORD;
-    }
-  } catch (err) {
+  } catch(err) {
     console.error(err);
     return responseMessage.USER.NOT_FOUND;
   }
+  let authenticated;
+  try {
+    authenticated = await bcrypt.compare(
+      decryptPassword(passwords.oldPassword),
+      user.password
+    );
+  } catch (err) {
+    console.error(err);
+    return responseMessage.USER.AUTHENTICATION_ERROR;
+  }
+  if (authenticated) {
+    user.password = decryptPassword(passwords.newPassword)
+    const userSaveResult = await DbTransactions.changePassword(user);
+    if (userSaveResult) {
+      try {
+        return { token: jwt.sign(getUserToToken(user), config.getJwtPrivateKey()) };
+      } catch (err) {
+        console.error(err);
+        return responseMessage.USER.TOKEN_CREATE_ERROR;
+      }
+    }
+    return responseMessage.USER.RESET_PASSWORD_FAIL;
+  } else {
+    return responseMessage.USER.WRONG_USERNAME_OR_PASSWORD;
+  }
+  
 }
 
 async function getUser(username) {
@@ -253,40 +251,7 @@ async function changeUserData(userId, avatarUrl) {
     return responseMessage.USER.NOT_FOUND;
   }  
   user.avatarUrl = avatarUrl;
-  const transaction = new Transaction(true);
-  transaction.insert(schemas.USER, user);
-
-  if (user.leagues.length) {
-    let leagueIds = [];
-    user.leagues.forEach(league => {
-      leagueIds.push(league.leagueId);
-    })
-
-    let leagues;
-    try {
-      leagues = await LeagueDoc.getLeaguesByIds(leagueIds);
-      if (!leagues) {
-        return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
-      }
-    } catch (err) {
-      console.error(err);
-      return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
-    }
-    leagues.forEach(league => {
-      league.players.find(player => user._id.equals(player.id)).avatar = user.avatarUrl;
-      league.markModified('players');
-      transaction.update(schemas.LEAGUE, league._id, league, { new: true });
-    })
-  }
-
-  try {
-    await transaction.run();
-    return user;
-  } catch (err)  {
-    console.error(err);
-    transaction.rollback();
-    return responseMessage.USER.MODIFY_FAIL;
-  };
+  return await DbTransactions.changeUserData(user);
 }
 
 function getUserToToken(user) {
