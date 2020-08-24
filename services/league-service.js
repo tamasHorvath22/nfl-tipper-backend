@@ -1,14 +1,13 @@
 const League = require('../models/leagueModel');
 const Season = require('../models/seasonModel');
 const responseMessage = require('../common/constants/api-response-messages');
-const MailService = require('../services/mailService');
-const Transaction = require('mongoose-transactions');
 const UserDoc = require('../persistence/user-doc');
 const LeagueDoc = require('../persistence/league-doc');
-const schemas = require('../common/constants/schemas');
 const GameService = require('../services/game-service');
 const mongoose = require('mongoose');
 const ScheduleService = require('../services/schedule-service');
+const DbTransactions = require('../persistence/transactions');
+
 
 module.exports = {
   createLeague: createLeague,
@@ -36,19 +35,10 @@ async function createLeague(creator, leagueData) {
   const league = buildLeague(user, leagueData)
   user.leagues.push({ leagueId: league._id, name: league.name });
 
-  const transaction = new Transaction(true);
-  transaction.insert(schemas.LEAGUE, league);
-  transaction.insert(schemas.USER, user);
-
-  try {
-    await transaction.run();
-    console.log('league save success')
-  } catch (err)  {
-    await transaction.rollback();
-    console.error(err);
-    console.log('league save fail')
+  let isLeagueSaveSuccess = await DbTransactions.saveNewLeague(user, league);
+  if (!isLeagueSaveSuccess) {
     return responseMessage.LEAGUE.CREATE_FAIL;
-  };
+  }
   await GameService.createNewWeekForLeague(league._id);
   return user;
 }
@@ -129,18 +119,7 @@ async function sendInvitation(invitorId, inviteData) {
   } else {
     league.invitations.push(invitedUser._id);
     invitedUser.invitations.push({ leagueId: league._id, name: league.name });
-    const transaction = new Transaction(true);
-    transaction.insert(schemas.LEAGUE, league);
-    transaction.insert(schemas.USER, invitedUser);
-    try {
-      await transaction.run();
-      // MailService.send()
-      return responseMessage.LEAGUE.INVITATION_SUCCESS;
-    } catch (err)  {
-      console.error(err);
-      await transaction.rollback();
-      return responseMessage.LEAGUE.INVITATION_FAIL;
-    };
+    return await DbTransactions.saveInvitation(invitedUser, league);
   }
 }
 
@@ -181,20 +160,7 @@ async function acceptInvitaion(invitedUserId, leagueId) {
       game.bets.push({ id: user._id, name: user.username, bet: null });
     })
   }
-  
-  const transaction = new Transaction(true);
-  league.markModified('seasons')
-  transaction.insert(schemas.LEAGUE, league);
-  transaction.insert(schemas.USER, user);
-
-  try {
-    await transaction.run();
-    return user;
-  } catch (err) {
-    console.error(err);
-    await transaction.rollback();
-    return responseMessage.LEAGUE.JOIN_FAIL;
-  };
+  return await DbTransactions.acceptInvitation(user, league);
 };
 
 async function saveWeekBets(userId, leagueId, incomingWeek) {
@@ -215,25 +181,15 @@ async function saveWeekBets(userId, leagueId, incomingWeek) {
 
   currentWeek.games.forEach(game => {
     const betToSave = game.bets.find(bet => bet.id.equals(userId));
-    const incomingGame = incomingWeek.games.find(incGame => mongoose.Types.ObjectId(incGame._id).equals(mongoose.Types.ObjectId(game._id)));
+    const incomingGame = incomingWeek.games.find(incGame => {
+      mongoose.Types.ObjectId(incGame._id).equals(mongoose.Types.ObjectId(game._id))
+    });
     betToSave.bet = incomingGame.bets.find(bet => bet.id === userId).bet;
     // TODO put back the code inside this commented if statement
     // if (new Date(game.startTime).getTime() > currentTime) {
     // }
   })
-  
-  const transaction = new Transaction(true);
-  league.markModified('seasons')
-  transaction.insert(schemas.LEAGUE, league);
-
-  try {
-    await transaction.run();
-    return responseMessage.LEAGUE.BET_SAVE_SUCCESS;
-  } catch (err)  {
-    console.error(err);
-    await transaction.rollback();
-    return responseMessage.LEAGUE.BET_SAVE_FAIL;
-  };
+  return await DbTransactions.saveWeekBets(league);
 };
 
 async function modifyLeague(userId, leagueId, avatarUrl, leagueName) {
@@ -251,18 +207,8 @@ async function modifyLeague(userId, leagueId, avatarUrl, leagueName) {
   }
   league.leagueAvatarUrl = avatarUrl;
   league.name = leagueName;
-  
-  const transaction = new Transaction(true);
-  transaction.insert(schemas.LEAGUE, league);
 
-  try {
-    await transaction.run();
-    return responseMessage.LEAGUE.UPDATE_SUCCESS;
-  } catch (err)  {
-    console.error(err);
-    await transaction.rollback();
-    return responseMessage.LEAGUE.UPDATE_FAIL;
-  };
+  return await DbTransactions.modifyLeague(league);
 };
 
 async function triggerManually() {
