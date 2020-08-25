@@ -1,10 +1,9 @@
 const schedule = require('node-schedule');
-const LeagueDoc = require('../persistence/league-doc');
-const Transaction = require('mongoose-transactions');
-const schemas = require('../common/constants/schemas');
-const GameService = require('../services/game-service');
-const sleep = require('util').promisify(setTimeout)
+const LeagueDoc = require('../persistence/league.doc');
+const GameService = require('./game.service');
+const sleep = require('util').promisify(setTimeout);
 const responseMessage = require('../common/constants/api-response-messages');
+const DbTransactions = require('../persistence/league.transactions');
 
 
 module.exports = {
@@ -41,28 +40,14 @@ async function closeWeek() {
     return;
   }
 
-  const transaction = new Transaction(true);
-
-  for (let i = 0; i < allLeagues.length; i++) {
-    const league = allLeagues[i];
+  allLeagues.forEach(league => {
     // TODO remove previous year (-1)
     const currentYear = new Date().getFullYear() - 1;
     const currentSeason = league.seasons.find(season => season.year === currentYear);
     const currentWeek = currentSeason.weeks[currentSeason.weeks.length - 1];
     currentWeek.isOpen = false;
-
-    league.markModified('seasons');
-    transaction.update(schemas.LEAGUE, league._id, league, { new: true });
-  }
-
-  try {
-    await transaction.run();
-    console.log('weeks close success');
-  } catch (err)  {
-    await transaction.rollback();
-    console.error(err);
-    console.log('week close fail');
-  };
+  })
+  await DbTransactions.saveClosedWeeks(allLeagues);
 }
 
 function scheduleEvaluateGames() {

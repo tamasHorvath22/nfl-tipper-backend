@@ -4,10 +4,10 @@ const api = require('./api/api');
 const config = require('./config');
 const initModule = require('./modules/initModule');
 const cors = require('cors')
-const Transactions = require('./persistence/user.transactions');
+const dbConnection = require('./persistence/database.connection');
 
 app.use(cors())
-Transactions.connectToDatabase(config.getDbConnectionString());
+dbConnection.connectToDatabase(config.getDbConnectionString());
 
 api(app, express.Router());
 initModule();

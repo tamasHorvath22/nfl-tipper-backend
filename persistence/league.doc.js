@@ -1,4 +1,4 @@
-const League = require('../models/leagueModel');
+const League = require('../models/league.model');
 const mongoose = require('mongoose');
 
 module.exports = {

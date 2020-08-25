@@ -1,23 +1,15 @@
-const mongoose = require('mongoose');
 const Transaction = require('mongoose-transactions');
 const responseMessage = require('../common/constants/api-response-messages');
 const schemas = require('../common/constants/schemas');
-const LeagueDoc = require('./league-doc');
 
 
 module.exports = {
-  connectToDatabase: connectToDatabase,
   saveNewUserToDb: saveNewUserToDb,
   createPasswordReset: createPasswordReset,
   createNewPassword: createNewPassword,
   confirmEmail: confirmEmail,
   changePassword: changePassword,
   changeUserData: changeUserData
-}
-
-function connectToDatabase(connectionString) {
-  mongoose.set('useCreateIndex', true);
-  mongoose.connect(connectionString, { useUnifiedTopology: true, useNewUrlParser: true });
 }
 
 async function saveNewUserToDb(user, emailConfirm) {

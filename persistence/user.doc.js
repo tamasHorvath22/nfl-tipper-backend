@@ -1,6 +1,6 @@
-const User = require('../models/userModel');
-const ConfirmEmail = require('../models/confirmEmailModel');
-const ForgotPassword = require('../models/forgotPasswordModel');
+const User = require('../models/user.model');
+const ConfirmEmail = require('../models/confirmemail.model');
+const ForgotPassword = require('../models/forgotpassword.model');
 
 module.exports = {
   getUserById: getUserById,

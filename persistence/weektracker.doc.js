@@ -1,8 +1,7 @@
 const mongoose = require('mongoose');
-const WeekTracker = require('../models/weekTracker');
+const WeekTracker = require('../models/weektracker.model');
 const Transaction = require('mongoose-transactions');
 const schemas = require('../common/constants/schemas');
-const WeekTrackerModel = require('../models/weekTracker');
 const regOrPst = require('../common/constants/regular-or-postseason');
 
 module.exports = {
@@ -16,7 +15,7 @@ async function initWeekTracker() {
   if (!trackers || !trackers.length) {
     // TODO remove -1 for production
     const currentYear = new Date().getFullYear() - 1;
-    let weekTracker = WeekTrackerModel({
+    let weekTracker = WeekTracker({
       year: currentYear,
       week: 1,
       regOrPst: regOrPst.REGULAR

@@ -1,9 +1,9 @@
-const WeekTrackerModel = require('../models/weekTracker');
+const WeekTrackerModel = require('../models/weektracker.model');
 const regOrPst = require('../common/constants/regular-or-postseason')
-const ScheduleService = require('../services/schedule-service');
-const logger = require('../services/logger-service');
-const WeekTrackerDoc = require('../persistence/week-tracker-doc');
-const BackupService = require('../services/backup-service');
+const ScheduleService = require('../services/schedule.service');
+const logger = require('../services/logger.service');
+const WeekTrackerDoc = require('../persistence/weektracker.doc');
+const BackupService = require('../services/backup.service');
 const { exec } = require("child_process");
 
 module.exports = async function () {

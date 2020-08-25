@@ -1,16 +1,16 @@
-const User = require('../models/userModel');
-const EmailConfirm = require('../models/confirmEmailModel');
-const ForgotPassword = require('../models/forgotPasswordModel');
+const User = require('../models/user.model');
+const EmailConfirm = require('../models/confirmemail.model');
+const ForgotPassword = require('../models/forgotpassword.model');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const config = require('../config');
 const responseMessage = require('../common/constants/api-response-messages');
 const mailType = require('../common/constants/email-type');
-const MailService = require('../services/mailService');
-const UserDoc = require('../persistence/user-doc');
+const MailService = require('./mail.service');
+const UserDoc = require('../persistence/user.doc');
 const CryptoJS = require('crypto-js');
 const DbTransactions = require('../persistence/user.transactions');
-const LeagueDoc = require('../persistence/league-doc');
+const LeagueDoc = require('../persistence/league.doc');
 
 module.exports = {
   login: login,
@@ -223,7 +223,6 @@ async function changePassword(username, passwords) {
   } else {
     return responseMessage.USER.WRONG_USERNAME_OR_PASSWORD;
   }
-  
 }
 
 async function getUser(username) {

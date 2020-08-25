@@ -1,8 +1,8 @@
 const schemas = require('../common/constants/schemas');
 const bodyParser = require('body-parser');
 const jsonParser = bodyParser.json();
-const LeagueService = require('../services/league-service');
-const BackupService = require('../services/backup-service');
+const LeagueService = require('../services/league.service');
+const BackupService = require('../services/backup.service');
 
 module.exports = function(app) {
   

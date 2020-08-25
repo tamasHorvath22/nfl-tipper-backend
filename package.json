@@ -4,7 +4,7 @@
   "description": "NFL game for betting matches",
   "main": "app.js",
   "scripts": {
-    "test": "nodemon --exec mocha --timeout 5000",
+    "test": "nodemon --exec mocha --timeout 10000",
     "start": "node app.js"
   },
   "repository": {

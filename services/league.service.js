@@ -1,11 +1,11 @@
-const League = require('../models/leagueModel');
-const Season = require('../models/seasonModel');
+const League = require('../models/league.model');
+const Season = require('../models/season.model');
 const responseMessage = require('../common/constants/api-response-messages');
-const UserDoc = require('../persistence/user-doc');
-const LeagueDoc = require('../persistence/league-doc');
-const GameService = require('../services/game-service');
+const UserDoc = require('../persistence/user.doc');
+const LeagueDoc = require('../persistence/league.doc');
+const GameService = require('./game.service');
 const mongoose = require('mongoose');
-const ScheduleService = require('../services/schedule-service');
+const ScheduleService = require('./schedule.service');
 const DbTransactions = require('../persistence/league.transactions');
 
 

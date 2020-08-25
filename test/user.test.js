@@ -1,10 +1,10 @@
 const expect = require('chai').expect;
-const UserService = require('../services/user-service');
+const UserService = require('../services/user.service');
 const responseMessage = require('../common/constants/api-response-messages');
 const CryptoJS = require('crypto-js');
 const mongoose = require('mongoose');
 const config = require('../config');
-const User = require('../models/userModel');
+const User = require('../models/user.model');
 const ForgotPassword = require('../models/forgotPasswordModel');
 const EmailConfirm = require('../models/confirmEmailModel');
 const jwt = require('jsonwebtoken');
@@ -120,7 +120,7 @@ describe('User service tests', () => {
       const result = await UserService.login(
         {
           username: 'username_1',
-          password: CryptoJS.AES.encrypt('password_1', process.env.PASSWORD_SECRET_KEY).toString() 
+          password: CryptoJS.AES.encrypt('password_1', process.env.PASSWORD_SECRET_KEY).toString()
         }
       );
       expect(result).to.equal(responseMessage.USER.WRONG_USERNAME_OR_PASSWORD);
@@ -188,7 +188,60 @@ describe('User service tests', () => {
       const result = await UserService.checkPassToken(last._id);
       expect(result).to.equal(responseMessage.USER.NO_HASH_FOUND);
     });
+  });
 
+  describe('confirm email tests', () => {
+    it('hash is null => no hash found', async () => {
+      const result = await UserService.confirmEmail(null);
+      expect(result).to.equal(responseMessage.USER.NO_EMAIL_HASH_FOUND);
+    });
+
+    it('correct hash => email confirmed', async () => {
+      const emailConfirms = await EmailConfirm.find({}).exec();
+      const last = emailConfirms[emailConfirms.length - 1];
+      const result = await UserService.confirmEmail(last._id);
+      expect(result).to.equal(responseMessage.USER.EMAIL_CONFIRMED);
+    });
+
+    it('incorrect hash => no hash found', async () => {
+      const emailConfirms = await EmailConfirm.find({}).exec();
+      const last = emailConfirms[emailConfirms.length - 1];
+      const result = await UserService.confirmEmail(last._id + 'x');
+      expect(result).to.equal(responseMessage.USER.NO_EMAIL_HASH_FOUND);
+    });
+  });
+
+  describe('change password tests', () => {
+    it('not existing username => no user found', async () => {
+      const result = await UserService.changePassword(
+        'no username',
+        { oldPassword: 'nothing', newPassword: 'nothing'}
+      );
+      expect(result).to.equal(responseMessage.USER.NOT_FOUND);
+    });
+
+    it('wrong old password => not authenticated', async () => {
+      const result = await UserService.changePassword(
+        'username',
+        { 
+          oldPassword: CryptoJS.AES.encrypt('wrong_password', process.env.PASSWORD_SECRET_KEY).toString(),
+          newPassword: 'nothing'
+        }
+      );
+      expect(result).to.equal(responseMessage.USER.WRONG_USERNAME_OR_PASSWORD);
+    });
+
+    it('correct old password => success password change', async () => {
+      const result = await UserService.changePassword(
+        'username',
+        {
+          oldPassword: CryptoJS.AES.encrypt('new_password', process.env.PASSWORD_SECRET_KEY).toString(),
+          newPassword: CryptoJS.AES.encrypt('more_new_password', process.env.PASSWORD_SECRET_KEY).toString()
+        }
+      );
+      console.log(result);
+      expect(result.hasOwnProperty('token')).to.equal(true);
+    });
 
   });
 });
