@@ -4,11 +4,11 @@ const GameModel = require('../models/gameModel');
 const WeekModel = require('../models/weekModel');
 const SeasonModel = require('../models/seasonModel');
 const gameStatus = require('../common/constants/game-status');
-const Transaction = require('mongoose-transactions');
-const schemas = require('../common/constants/schemas');
 const winnerTeam = require('../common/constants/team');
 const WeekTrackerDoc = require('../persistence/week-tracker-doc');
 const regOrPst = require('../common/constants/regular-or-postseason');
+const DbTransactions = require('../persistence/game.transactions');
+const responseMessage = require('../common/constants/api-response-messages');
 
 module.exports = {
   createNewWeekForLeague: createNewWeekForLeague,
@@ -34,13 +34,10 @@ async function createNewSeason() {
   } catch (err) {
     console.error(err);
     console.log('Before new season creation, week tracker reset failed.');
-    return;
+    return responseMessage.SEASON.CREATE_FAIL;
   }
-
   const leagues = await LeagueDoc.getAllLeagues();
-  const transaction = new Transaction(true);
   const currentYear = new Date().getFullYear();
-
   leagues.forEach(league => {
     if (league.seasons.find(season => season.year === currentYear)) {
       return;
@@ -49,7 +46,6 @@ async function createNewSeason() {
     league.players.forEach(player => {
       standingsInit.push({ id: player.id, name: player.name, score: 0 })
     })
-
     const newSeason = SeasonModel({
       year: currentYear,
       numberOfSeason: currentYear - 1919,
@@ -61,24 +57,17 @@ async function createNewSeason() {
     })
     league.seasons[league.seasons.length - 1].isCurrent = false;
     league.seasons.push(newSeason);
-    league.markModified('seasons');
-    transaction.insert(schemas.LEAGUE, league);
   })
-
-  try {
-    await transaction.run();
-  } catch (err) {
-    console.error(err);
-    await transaction.rollback();
-    return;
+  if (await DbTransactions.saveNewSeason(leagues)) {
+    await createNewWeekAndGames();
+    return responseMessage.SEASON.CREATE_SUCCESS;
   }
-  await createNewWeekAndGames()
+  return responseMessage.SEASON.CREATE_FAIL;
 }
 
 async function createNewWeekAndGames() {
   const leagues = await LeagueDoc.getAllLeagues();
   const weekData = await getWeekData();
-  const transaction = new Transaction(true);
 
   leagues.forEach(league => {
     const currentSeason = league.seasons.find(season => season.year === weekData.year);
@@ -86,37 +75,20 @@ async function createNewWeekAndGames() {
       return;
     }
     currentSeason.weeks.push(initNewWeek(weekData, league));
-    league.markModified('seasons');
-    transaction.insert(schemas.LEAGUE, league);
   })
-
-  try {
-    await transaction.run();
-  } catch (err) {
-    console.error(err);
-    await transaction.rollback();
-  }
+  await DbTransactions.saveSeasonModifications(leagues);
 }
 
 async function createNewWeekForLeague(leagueId) {
   const league = await LeagueDoc.getLeague(leagueId);
   const weekData = await getWeekData();
-  const transaction = new Transaction(true);
 
   const currentSeason = league.seasons.find(season => season.year === weekData.year);
   if (currentSeason.weeks.find(week => week.weekId === weekData.week.id)) {
     return;
   }
   currentSeason.weeks.push(initNewWeek(weekData, league));
-  league.markModified('seasons')
-  transaction.insert(schemas.LEAGUE, league);
-
-  try {
-    await transaction.run();
-  } catch (err) {
-    console.error(err);
-    transaction.rollback();
-  }
+  await DbTransactions.saveSeasonModifications([league]);
 }
 
 function initNewWeek(weekData, league) {
@@ -154,7 +126,6 @@ function initNewWeek(weekData, league) {
 async function randomiseBets() {
   // TODO this fuction is for testing
   const leagues = await LeagueDoc.getAllLeagues();
-  const transaction = new Transaction(true);
 
   leagues.forEach(league => {
     const currentSeason = league.seasons.find(season => season.year === 2019);
@@ -164,32 +135,22 @@ async function randomiseBets() {
         bet.bet = Math.random() > 0.5 ? winnerTeam.HOME : winnerTeam.AWAY
       })
     })
-    league.markModified('seasons')
-    transaction.insert(schemas.LEAGUE, league);
   })
-
-  try {
-    await transaction.run();
-  } catch (err) {
-    console.error(err);
-    await transaction.rollback();
-  }
-
+  await DbTransactions.saveSeasonModifications(leagues);
 }
 
 async function evaluateWeek() {
   // TODO this fuction is for testing, remove calling it in production
-  // await randomiseBets();
+  await randomiseBets();
 
   const leagues = await LeagueDoc.getAllLeagues();
   const weekResults = await getWeekData();
-  const transaction = new Transaction(true);
   const isThisSuperBowlWeek = isSuperBowlWeek(weekResults);
 
   if (!leagues[0].seasons.find(season => season.year === weekResults.year).isOpen) {
     return;
   }
-  
+
   leagues.forEach(league => {
     const resultObject = {};
     league.players.forEach(player => {
@@ -225,17 +186,12 @@ async function evaluateWeek() {
     if (isThisSuperBowlWeek) {
       currentSeason.isOpen = false;
     }
-
-    league.markModified('seasons')
-    transaction.insert(schemas.LEAGUE, league);
   })
 
-  try {
-    await transaction.run();
+  if (await DbTransactions.saveSeasonModifications(leagues)) {
     return isThisSuperBowlWeek;
-  } catch (err) {
-    console.error(err);
-    await transaction.rollback();
+  } else {
+    return responseMessage.LEAGUE.UPDATE_FAIL;
   }
 }
 
@@ -256,16 +212,7 @@ async function stepWeekTracker() {
   } else {
     weekTracker.week++;
   }
-
-  const transaction = new Transaction(true);
-  transaction.insert(schemas.WEEK_TRACKER, weekTracker);
-
-  try {
-    await transaction.run();
-  } catch (err)  {
-    console.error(err);
-    await transaction.rollback();
-  };
+  await DbTransactions.saveWeekTrackerModifications(weekTracker);
 }
 
 async function resetWeekTrackerForNextYear() {
@@ -274,13 +221,5 @@ async function resetWeekTrackerForNextYear() {
   weekTracker.regOrPst = regOrPst.REGULAR;
   weekTracker.week = 1;
 
-  const transaction = new Transaction(true);
-  transaction.insert(schemas.WEEK_TRACKER, weekTracker);
-
-  try {
-    await transaction.run();
-  } catch (err)  {
-    console.error(err);
-    await transaction.rollback();
-  };
+  await DbTransactions.saveWeekTrackerModifications(weekTracker);
 }

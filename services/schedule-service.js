@@ -4,6 +4,8 @@ const Transaction = require('mongoose-transactions');
 const schemas = require('../common/constants/schemas');
 const GameService = require('../services/game-service');
 const sleep = require('util').promisify(setTimeout)
+const responseMessage = require('../common/constants/api-response-messages');
+
 
 module.exports = {
   scheduleAll: scheduleAll,
@@ -110,6 +112,9 @@ async function createNewWeek() {
 async function triggerManually() {
   await closeWeek();
   const isSuperBowlWeek = await evaluateGames();
+  if (isSuperBowlWeek === responseMessage.LEAGUE.UPDATE_FAIL) {
+    return responseMessage.WEEK.EVALUATION_FAIL;
+  }
   if (!isSuperBowlWeek) {
     await stepWeek();
     console.log('sleep starts')
@@ -117,7 +122,7 @@ async function triggerManually() {
     console.log('sleep ends')
     await createNewWeek();
   }
-  return 'done';
+  return responseMessage.WEEK.EVALUATION_SUCCESS;
 }
 
 function scheduleAll() {
