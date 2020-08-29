@@ -87,5 +87,8 @@ module.exports = Object.freeze({
   WEEK: {
     EVALUATION_FAIL: 'EVALUATION_FAIL',
     EVALUATION_SUCCESS: 'EVALUATION_SUCCESS'
+  },
+  DATABASE: {
+    ERROR: 'ERROR'
   }
 })

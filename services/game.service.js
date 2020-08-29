@@ -37,6 +37,12 @@ async function createNewSeason() {
     return responseMessage.SEASON.CREATE_FAIL;
   }
   const leagues = await LeagueDoc.getAllLeagues();
+  if (!leagues) {
+    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+  }
+  if (leagues === responseMessage.DATABASE.ERROR) {
+    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+  }
   const currentYear = new Date().getFullYear();
   leagues.forEach(league => {
     if (league.seasons.find(season => season.year === currentYear)) {
@@ -67,6 +73,12 @@ async function createNewSeason() {
 
 async function createNewWeekAndGames() {
   const leagues = await LeagueDoc.getAllLeagues();
+  if (!leagues) {
+    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+  }
+  if (leagues === responseMessage.DATABASE.ERROR) {
+    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+  }
   const weekData = await getWeekData();
 
   leagues.forEach(league => {
@@ -80,7 +92,13 @@ async function createNewWeekAndGames() {
 }
 
 async function createNewWeekForLeague(leagueId) {
-  const league = await LeagueDoc.getLeague(leagueId);
+  const league = await LeagueDoc.getLeagueById(leagueId);
+  if (!league) {
+    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+  }
+  if (league === responseMessage.DATABASE.ERROR) {
+    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+  }
   const weekData = await getWeekData();
 
   const currentSeason = league.seasons.find(season => season.year === weekData.year);
@@ -126,6 +144,12 @@ function initNewWeek(weekData, league) {
 async function randomiseBets() {
   // TODO this fuction is for testing
   const leagues = await LeagueDoc.getAllLeagues();
+  if (!leagues) {
+    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+  }
+  if (leagues === responseMessage.DATABASE.ERROR) {
+    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+  }
 
   leagues.forEach(league => {
     const currentSeason = league.seasons.find(season => season.year === 2019);
@@ -144,6 +168,12 @@ async function evaluateWeek() {
   await randomiseBets();
 
   const leagues = await LeagueDoc.getAllLeagues();
+  if (!leagues) {
+    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+  }
+  if (leagues === responseMessage.DATABASE.ERROR) {
+    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+  }
   const weekResults = await getWeekData();
   const isThisSuperBowlWeek = isSuperBowlWeek(weekResults);
 

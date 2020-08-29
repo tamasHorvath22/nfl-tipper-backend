@@ -1,6 +1,7 @@
 const User = require('../models/user.model');
 const ConfirmEmail = require('../models/confirmemail.model');
 const ForgotPassword = require('../models/forgotpassword.model');
+const responseMessage = require('../common/constants/api-response-messages');
 
 module.exports = {
   getUserById: getUserById,
@@ -12,19 +13,39 @@ module.exports = {
 }
 
 async function getUserById(id) {
-  return await User.findById(id).exec();
+  try {
+    return await User.findById(id).exec();
+  } catch(err) {
+    console.error(err);
+    return responseMessage.DATABASE.ERROR;
+  }
 }
 
 async function getUserByUsername(username) {
-  return await User.findOne({ username: username }).exec();
+  try {
+    return await User.findOne({ username: username }).exec();
+  } catch(err) {
+    console.error(err);
+    return responseMessage.DATABASE.ERROR;
+  }
 }
 
 async function getUserByEmail(email) {
-  return await User.findOne({ email: email }).exec();
+  try {
+    return await User.findOne({ email: email }).exec();
+  } catch(err) {
+    console.error(err);
+    return responseMessage.DATABASE.ERROR;
+  }
 }
 
 async function getAllUsers() {
-  return await User.find({}).exec();
+  try {
+    return await User.find({}).exec();
+  } catch(err) {
+    console.error(err);
+    return responseMessage.DATABASE.ERROR;
+  }
 }
 
 async function getAllConfirmEmail() {

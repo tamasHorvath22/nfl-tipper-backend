@@ -25,15 +25,15 @@ module.exports = {
 }
 
 async function login(userDto) {
-  let user;
-  try {
-    user = await UserDoc.getUserByUsername(userDto.username);
-  } catch {
-    return responseMessage.USER.ERROR;
-  }
+  const user = await UserDoc.getUserByUsername(userDto.username);
   if (!user) {
     return responseMessage.USER.WRONG_USERNAME_OR_PASSWORD;
   }
+  // TODO set frontend for return value
+  if (user === responseMessage.DATABASE.ERROR) {
+    return responseMessage.USER.ERROR;
+  }
+
   if (!user.isEmailConfirmed) {
     return responseMessage.USER.EMAIL_NOT_CONFIRMED;
   }
@@ -93,16 +93,15 @@ async function register(userDto) {
 }
 
 async function resetPassword(email) {
-  let user;
-  try {
-    user = await UserDoc.getUserByEmail(email);
-    if (!user) {
-      return responseMessage.USER.NOT_FOUND;
-    }
-  } catch (err) {
-    console.error(err);
+  const user = await UserDoc.getUserByEmail(email);
+  if (!user) {
     return responseMessage.USER.NOT_FOUND;
   }
+  // TODO set frontend for return value
+  if (user === responseMessage.DATABASE.ERROR) {
+    return responseMessage.USER.NOT_FOUND;
+  }
+
   const forgotPassword = ForgotPassword({
     email: email
   })
@@ -124,7 +123,6 @@ async function newPassword(data) {
   if (!data) {
     return responseMessage.COMMON.ERROR;
   }
-  let user;
   let forgotPassword;
   try {
     forgotPassword = await ForgotPassword.findById(data.hash).exec();
@@ -135,15 +133,15 @@ async function newPassword(data) {
     console.error(err);
     return responseMessage.COMMON.ERROR;
   }
-  try {
-    user = await UserDoc.getUserByEmail(forgotPassword.email);
-    if (!user) {
-      return responseMessage.USER.NOT_FOUND;
-    }
-  } catch (err) {
-    console.error(err);
+  const user = await UserDoc.getUserByEmail(forgotPassword.email);
+  if (!user) {
     return responseMessage.USER.NOT_FOUND;
   }
+  // TODO set frontend for return value
+  if (user === responseMessage.DATABASE.ERROR) {
+    return responseMessage.USER.NOT_FOUND;
+  }
+
   user.password = decryptPassword(data.password);
   return await DbTransactions.createNewPassword(user, forgotPassword);
 }
@@ -173,29 +171,26 @@ async function confirmEmail(hash) {
     console.error(err);
     return responseMessage.USER.NO_EMAIL_HASH_FOUND;
   }
-  let user = null
-  try {
-    user = await UserDoc.getUserById(confirmModel.userId);
-    if (!user) {
-      return responseMessage.USER.NOT_FOUND;
-    }
-    user.isEmailConfirmed = true
-  } catch (err) {
-    console.error(err);
+
+  const user = await UserDoc.getUserById(confirmModel.userId);
+  if (!user) {
     return responseMessage.USER.NOT_FOUND;
   }
+  // TODO set frontend for return value
+  if (user === responseMessage.DATABASE.ERROR) {
+    return responseMessage.USER.NOT_FOUND;
+  }
+
   return DbTransactions.confirmEmail(user, confirmModel);
 }
 
 async function changePassword(username, passwords) {
-  let user;
-  try {
-    user = await UserDoc.getUserByUsername(username);
-    if (!user) {
-      return responseMessage.USER.NOT_FOUND;
-    }
-  } catch(err) {
-    console.error(err);
+  const user = await UserDoc.getUserByUsername(username);
+  if (!user) {
+    return responseMessage.USER.NOT_FOUND;
+  }
+  // TODO set frontend for return value
+  if (user === responseMessage.DATABASE.ERROR) {
     return responseMessage.USER.NOT_FOUND;
   }
   let authenticated;
@@ -226,45 +221,40 @@ async function changePassword(username, passwords) {
 }
 
 async function getUser(username) {
-  let user;
-  try {
-    user = await UserDoc.getUserByUsername(username);
-    if (!user) {
-      return responseMessage.USER.NOT_FOUND;
-    }
-    return user;
-  } catch (err) {
-    console.error(err);
+  const user = await UserDoc.getUserByUsername(username);
+  if (!user) {
     return responseMessage.USER.NOT_FOUND;
   }
+  // TODO set frontend for return value
+  if (user === responseMessage.DATABASE.ERROR) {
+    return responseMessage.USER.NOT_FOUND;
+  }
+  return user;
 }
 
 async function changeUserData(userId, avatarUrl) {
-  let user;
-  try {
-    user = await UserDoc.getUserById(userId);
-    if (!user) {
-      return responseMessage.USER.NOT_FOUND;
-    }
-  } catch (err) {
-    console.error(err);
+  const user = await UserDoc.getUserById(userId);
+  if (!user) {
     return responseMessage.USER.NOT_FOUND;
-  }  
+  }
+  // TODO set frontend for return value
+  if (user === responseMessage.DATABASE.ERROR) {
+    return responseMessage.USER.NOT_FOUND;
+  }
+
   user.avatarUrl = avatarUrl;
-  let leagues = null;
+  let leagues;
   if (user.leagues.length) {
     let leagueIds = [];
     user.leagues.forEach(league => {
       leagueIds.push(league.leagueId);
     })
-
-    try {
-      leagues = await LeagueDoc.getLeaguesByIds(leagueIds);
-      if (!leagues) {
-        return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
-      }
-    } catch (err) {
-      console.error(err);
+    leagues = await LeagueDoc.getLeaguesByIds(leagueIds);
+    if (!leagues) {
+      return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+    }
+    // TODO set frontend for return value
+    if (leagues === responseMessage.DATABASE.ERROR) {
       return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
     }
     leagues.forEach(league => {

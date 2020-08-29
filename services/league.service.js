@@ -22,13 +22,12 @@ module.exports = {
 }
 
 async function createLeague(creator, leagueData) {
-  let user;
-  try {
-    user = await UserDoc.getUserById(creator.userId);
-    if (!user) {
-      return responseMessage.USER.NOT_FOUND;
-    }
-  } catch (err) {
+  const user = await UserDoc.getUserById(creator.userId);
+  if (!user) {
+    return responseMessage.USER.NOT_FOUND;
+  }
+  // TODO set frontend for return value
+  if (user === responseMessage.DATABASE.ERROR) {
     return responseMessage.USER.NOT_FOUND;
   }
 
@@ -68,42 +67,38 @@ function buildLeague(user, leagueData) {
 }
 
 async function getLeagueNames(idList) {
+  // TODO set frontend to error message
   return await LeagueDoc.getLeagueNames(idList);
 }
 
 async function getLeague(id) {
-  let league;
-  try {
-    league = await LeagueDoc.getLeagueById(id);
-  } catch (err) {
-    return responseMessage.LEAGUE.NOT_FOUND;
-  }
+  const league = await LeagueDoc.getLeagueById(id);
   if (!league) {
     return responseMessage.LEAGUE.NOT_FOUND;
-  } else {
-    return league;
   }
+  // TODO set frontend for return value
+  if (league === responseMessage.DATABASE.ERROR) {
+    return responseMessage.LEAGUE.NOT_FOUND;
+  }
+  return league;
 }
 
 async function sendInvitation(invitorId, inviteData) {
-  let league;
-  let invitedUser;
-  try {
-    league = await LeagueDoc.getLeagueById(inviteData.leagueId);
-    if (!league) {
-      return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
-    }
-  } catch (err) {
+  const league = await LeagueDoc.getLeagueById(inviteData.leagueId);
+  if (!league) {
+    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+  }
+  // TODO set frontend for return value
+  if (league === responseMessage.DATABASE.ERROR) {
     return responseMessage.COMMON.ERROR;
   }
-
-  try {
-    invitedUser = await UserDoc.getUserByEmail(inviteData.invitedEmail);
-    if (!invitedUser) {
-      return responseMessage.USER.NO_EMAIL_FOUND;
-    }
-  } catch (err) {
-    return responseMessage.COMMON.ERROR;
+  const invitedUser = await UserDoc.getUserByEmail(inviteData.invitedEmail);
+  if (!invitedUser) {
+    return responseMessage.USER.NO_EMAIL_FOUND;
+  }
+  // TODO set frontend for return value
+  if (invitedUser === responseMessage.DATABASE.ERROR) {
+    return responseMessage.DATABASE.ERROR;
   }
 
   if (league.players.find(user => user.id.equals(invitedUser._id))) {
@@ -124,24 +119,21 @@ async function sendInvitation(invitorId, inviteData) {
 }
 
 async function acceptInvitaion(invitedUserId, leagueId) {
-  let league;
-  let user;
-  try {
-    league = await LeagueDoc.getLeagueById(leagueId);
-    if (!league) {
-      return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
-    }
-  } catch (err) {
+  const league = await LeagueDoc.getLeagueById(leagueId);
+  if (!league) {
+    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+  }
+  // TODO set frontend for return value
+  if (league === responseMessage.DATABASE.ERROR) {
     return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
   }
 
-  try {
-    user = await UserDoc.getUserById(invitedUserId);
-    if (!user) {
-      return responseMessage.USER.NOT_FOUND;
-    }
-  } catch (err) {
-    console.error(err);
+  const user = await UserDoc.getUserById(invitedUserId);
+  if (!user) {
+    return responseMessage.USER.NOT_FOUND;
+  }
+  // TODO set frontend for return value
+  if (user === responseMessage.DATABASE.ERROR) {
     return responseMessage.USER.NOT_FOUND;
   }
 
@@ -164,13 +156,12 @@ async function acceptInvitaion(invitedUserId, leagueId) {
 };
 
 async function saveWeekBets(userId, leagueId, incomingWeek) {
-  let league;
-  try {
-    league = await LeagueDoc.getLeagueById(leagueId);
-    if (!league) {
-      return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
-    }
-  } catch (err) {
+  const league = await LeagueDoc.getLeagueById(leagueId);
+  if (!league) {
+    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+  }
+  // TODO set frontend for return value
+  if (league === responseMessage.DATABASE.ERROR) {
     return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
   }
   // TODO remove previous year (-1)
@@ -182,7 +173,7 @@ async function saveWeekBets(userId, leagueId, incomingWeek) {
   currentWeek.games.forEach(game => {
     const betToSave = game.bets.find(bet => bet.id.equals(userId));
     const incomingGame = incomingWeek.games.find(incGame => {
-      mongoose.Types.ObjectId(incGame._id).equals(mongoose.Types.ObjectId(game._id))
+      return mongoose.Types.ObjectId(incGame._id).equals(mongoose.Types.ObjectId(game._id))
     });
     betToSave.bet = incomingGame.bets.find(bet => bet.id === userId).bet;
     // TODO put back the code inside this commented if statement
@@ -193,13 +184,12 @@ async function saveWeekBets(userId, leagueId, incomingWeek) {
 };
 
 async function modifyLeague(userId, leagueId, avatarUrl, leagueName) {
-  let league;
-  try {
-    league = await LeagueDoc.getLeagueById(leagueId);
-    if (!league) {
-      return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
-    }
-  } catch (err) {
+  const league = await LeagueDoc.getLeagueById(leagueId);
+  if (!league) {
+    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+  }
+  // TODO set frontend for return value
+  if (league === responseMessage.DATABASE.ERROR) {
     return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
   }
   if (userId !== league.creator) {

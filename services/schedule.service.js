@@ -35,6 +35,12 @@ function scheduleCloseWeek() {
 
 async function closeWeek() {
   const allLeagues = await LeagueDoc.getAllLeagues();
+  if (!allLeagues) {
+    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+  }
+  if (allLeagues === responseMessage.DATABASE.ERROR) {
+    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+  }
   if (!allLeagues.length) {
     console.log('no leagues found');
     return;
