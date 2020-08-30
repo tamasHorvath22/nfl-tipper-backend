@@ -50,9 +50,11 @@ async function saveClosedWeeks(leagues) {
   try {
     await transaction.run();
     console.log('weeks close success');
+    return true;
   } catch (err)  {
     transaction.rollback();
     console.error(err);
     console.log('week close fail');
+    return false;
   };
 }

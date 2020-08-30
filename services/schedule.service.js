@@ -12,6 +12,27 @@ module.exports = {
   triggerManually: triggerManually
 }
 
+async function triggerManually() {
+  const weekCloseResult = await closeWeek();
+  if (weekCloseResult === responseMessage.LEAGUE.LEAGUES_NOT_FOUND ||
+      weekCloseResult === responseMessage.DATABASE.ERROR ||
+      weekCloseResult === responseMessage.WEEK.CLOSE_FAIL) {
+        return responseMessage.WEEK.CLOSE_FAIL;
+      }
+  const isSuperBowlWeek = await evaluateGames();
+  if (isSuperBowlWeek === responseMessage.LEAGUE.UPDATE_FAIL) {
+    return responseMessage.WEEK.EVALUATION_FAIL;
+  }
+  if (!isSuperBowlWeek) {
+    await stepWeek();
+    console.log('sleep starts')
+    await sleep(10000);
+    console.log('sleep ends')
+    await createNewWeek();
+  }
+  return responseMessage.WEEK.EVALUATION_SUCCESS;
+}
+
 async function closeWeek() {
   const allLeagues = await LeagueDoc.getAllLeagues();
   if (!allLeagues) {
@@ -36,7 +57,8 @@ async function closeWeek() {
     const currentWeek = currentSeason.weeks[currentSeason.weeks.length - 1];
     currentWeek.isOpen = false;
   })
-  await DbTransactions.saveClosedWeeks(allLeagues);
+  const isSaveSuccess = await DbTransactions.saveClosedWeeks(allLeagues);
+  return isSaveSuccess ? responseMessage.WEEK.CLOSE_SUCCESS : responseMessage.WEEK.CLOSE_FAIL;
 }
 
 async function evaluateGames() {
@@ -69,26 +91,6 @@ async function createNewWeek() {
     console.error(err);
     console.log('new week creation fail');
   }
-}
-
-async function triggerManually() {
-  const weekCloseResult = await closeWeek();
-  if (weekCloseResult === responseMessage.LEAGUE.LEAGUES_NOT_FOUND ||
-      weekCloseResult === responseMessage.DATABASE.ERROR) {
-        return responseMessage.WEEK.CLOSE_FAIL;
-      }
-  const isSuperBowlWeek = await evaluateGames();
-  if (isSuperBowlWeek === responseMessage.LEAGUE.UPDATE_FAIL) {
-    return responseMessage.WEEK.EVALUATION_FAIL;
-  }
-  if (!isSuperBowlWeek) {
-    await stepWeek();
-    console.log('sleep starts')
-    await sleep(10000);
-    console.log('sleep ends')
-    await createNewWeek();
-  }
-  return responseMessage.WEEK.EVALUATION_SUCCESS;
 }
 
 function scheduleAll() {

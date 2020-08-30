@@ -22,10 +22,17 @@ async function getWeekData() {
   const baseApiUrl = 'https://api.sportradar.us/nfl/official/trial/v5/en/games/';
   const apiKeyPart = '/schedule.json?api_key='
   const weekTracker = await WeekTrackerDoc.getTracker();
-
+  if (!weekTracker) {
+    return null;
+  }
   const path = `${baseApiUrl}${weekTracker.year}/${weekTracker.regOrPst}/${weekTracker.week}${apiKeyPart}${process.env.SPORTRADAR_KEY}`
-  const weekData = await axios.get(path);
-  return weekData.data;
+  try {
+    const weekData = await axios.get(path);
+    return weekData.data;
+  } catch(err) {
+    console.error(err);
+    return null;
+  }
 }
 
 async function createNewSeason() {
@@ -80,6 +87,9 @@ async function createNewWeekAndGames() {
     return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
   }
   const weekData = await getWeekData();
+  if (!weekData) {
+    return responseMessage.DATABASE.ERROR;
+  }
 
   leagues.forEach(league => {
     const currentSeason = league.seasons.find(season => season.year === weekData.year);
@@ -100,6 +110,9 @@ async function createNewWeekForLeague(leagueId) {
     return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
   }
   const weekData = await getWeekData();
+  if (!weekData) {
+    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+  }
 
   const currentSeason = league.seasons.find(season => season.year === weekData.year);
   if (currentSeason.weeks.find(week => week.weekId === weekData.week.id)) {
@@ -175,6 +188,9 @@ async function evaluateWeek() {
     return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
   }
   const weekResults = await getWeekData();
+  if (!weekResults) {
+    return responseMessage.LEAGUE.UPDATE_FAIL;
+  }
   const isThisSuperBowlWeek = isSuperBowlWeek(weekResults);
 
   if (!leagues[0].seasons.find(season => season.year === weekResults.year).isOpen) {

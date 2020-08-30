@@ -36,7 +36,12 @@ async function getLeagueById(id) {
 }
 
 async function getLeaguesByIds(idList) {
-  return await findLeaguesByIds(idList);
+  try {
+    return await findLeaguesByIds(idList);
+  } catch(err) {
+    console.error(err);
+    return responseMessage.DATABASE.ERROR;
+  }
 }
 
 async function findLeaguesByIds(idList) {
