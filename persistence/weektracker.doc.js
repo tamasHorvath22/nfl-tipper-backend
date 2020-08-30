@@ -1,4 +1,3 @@
-const mongoose = require('mongoose');
 const WeekTracker = require('../models/weektracker.model');
 const Transaction = require('mongoose-transactions');
 const schemas = require('../common/constants/schemas');
@@ -37,8 +36,8 @@ async function initWeekTracker() {
 
 async function getTracker() {
   try {
-    const tracker = await WeekTracker.find().exec();
-    if (tracker) {
+    const tracker = await WeekTracker.find({}).exec();
+    if (tracker && tracker.length) {
       return tracker[0];
     }
     return null;
@@ -51,7 +50,7 @@ async function getTracker() {
 
 async function getAllTracker() {
   try {
-    const trackers = await WeekTracker.find().exec();
+    const trackers = await WeekTracker.find({}).exec();
     if (trackers) {
       return trackers;
     }
