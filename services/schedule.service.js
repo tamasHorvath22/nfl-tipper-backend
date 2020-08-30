@@ -24,10 +24,14 @@ async function triggerManually() {
     return responseMessage.WEEK.EVALUATION_FAIL;
   }
   if (!isSuperBowlWeek) {
-    await stepWeek();
+    const isStepWeekSuccess = await stepWeek();
+    if (!isStepWeekSuccess) {
+      return responseMessage.WEEK.EVALUATION_FAIL;
+    }
     console.log('sleep starts')
     await sleep(10000);
     console.log('sleep ends')
+    
     await createNewWeek();
   }
   return responseMessage.WEEK.EVALUATION_SUCCESS;
@@ -74,13 +78,13 @@ async function evaluateGames() {
 }
 
 async function stepWeek() {
-  try {
-    await GameService.stepWeekTracker();
-    console.log('week tracker step success');
-  } catch (err) {
-    console.error(err);
+  const isStepSuccess = await GameService.stepWeekTracker();
+  if (!isStepSuccess) {
     console.log('week tracker step fail');
+    return false;
   }
+  console.log('week tracker step success');
+  return true;
 }
 
 async function createNewWeek() {

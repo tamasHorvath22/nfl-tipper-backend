@@ -50,8 +50,10 @@ async function saveWeekTrackerModifications(weekTracker) {
 
   try {
     await transaction.run();
+    return true;
   } catch (err)  {
     console.error(err);
     transaction.rollback();
+    return false;
   };
 }

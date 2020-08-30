@@ -36,10 +36,8 @@ async function getWeekData() {
 }
 
 async function createNewSeason() {
-  try {
-    await resetWeekTrackerForNextYear();
-  } catch (err) {
-    console.error(err);
+  const resetWeekTrackerResult = await resetWeekTrackerForNextYear();
+  if (!resetWeekTrackerResult) {
     console.log('Before new season creation, week tracker reset failed.');
     return responseMessage.SEASON.CREATE_FAIL;
   }
@@ -247,6 +245,9 @@ function isSuperBowlWeek(week) {
 
 async function stepWeekTracker() {
   const weekTracker = await WeekTrackerDoc.getTracker();
+  if (!weekTracker) {
+    return null;
+  }
   if (weekTracker.regOrPst === regOrPst.POSTSEASON && weekTracker.week === 4) {
     // after super bowl, when evaluating the week, not changing the week tracker
     return;
@@ -263,6 +264,9 @@ async function stepWeekTracker() {
 
 async function resetWeekTrackerForNextYear() {
   const weekTracker = await WeekTrackerDoc.getTracker();
+  if (!weekTracker) {
+    return null;
+  }
   weekTracker.year = new Date().getFullYear();
   weekTracker.regOrPst = regOrPst.REGULAR;
   weekTracker.week = 1;
