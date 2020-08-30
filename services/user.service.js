@@ -29,7 +29,6 @@ async function login(userDto) {
   if (!user) {
     return responseMessage.USER.WRONG_USERNAME_OR_PASSWORD;
   }
-  // TODO set frontend for return value
   if (user === responseMessage.DATABASE.ERROR) {
     return responseMessage.USER.ERROR;
   }
@@ -63,7 +62,7 @@ function decryptPassword(hash) {
 
 async function register(userDto) {
   if (userDto.username[0] === '$') {
-    return responseMessage.USER.USERNAME_TAKEN;
+    return responseMessage.USER.USERNAME_STARTS_WITH_$;
   }
   const user = User({
     username: userDto.username,
@@ -97,11 +96,9 @@ async function resetPassword(email) {
   if (!user) {
     return responseMessage.USER.NOT_FOUND;
   }
-  // TODO set frontend for return value
   if (user === responseMessage.DATABASE.ERROR) {
-    return responseMessage.USER.NOT_FOUND;
+    return responseMessage.DATABASE.ERROR;
   }
-
   const forgotPassword = ForgotPassword({
     email: email
   })
@@ -123,21 +120,14 @@ async function newPassword(data) {
   if (!data) {
     return responseMessage.COMMON.ERROR;
   }
-  let forgotPassword;
-  try {
-    forgotPassword = await ForgotPassword.findById(data.hash).exec();
-    if (!forgotPassword) {
-      return responseMessage.FORGET_PASSWORD.NO_REQUEST_FOUND;
-    }
-  } catch (err) {
-    console.error(err);
-    return responseMessage.COMMON.ERROR;
+  const forgotPassword = await UserDoc.getForgotPasswordById(data.hash);
+  if (!forgotPassword || forgotPassword === responseMessage.DATABASE.ERROR) {
+    return responseMessage.DATABASE.ERROR
   }
   const user = await UserDoc.getUserByEmail(forgotPassword.email);
   if (!user) {
     return responseMessage.USER.NOT_FOUND;
   }
-  // TODO set frontend for return value
   if (user === responseMessage.DATABASE.ERROR) {
     return responseMessage.USER.NOT_FOUND;
   }
@@ -147,41 +137,28 @@ async function newPassword(data) {
 }
 
 async function checkPassToken(hash) {
-  let forgotPassword;
-  try {
-    forgotPassword = await ForgotPassword.findById(hash).exec();
-    if (!forgotPassword) {
-      return responseMessage.USER.NO_HASH_FOUND;
-    }
-    return responseMessage.USER.HASH_FOUND;
-  } catch (err) {
-    console.error(err);
+  const forgotPassword = await UserDoc.getForgotPasswordById(hash);
+  if (!forgotPassword || forgotPassword === responseMessage.DATABASE.ERROR) {
     return responseMessage.USER.NO_HASH_FOUND;
   }
+  return responseMessage.USER.HASH_FOUND;
 }
 
 async function confirmEmail(hash) {
-  let confirmModel;
-  try {
-    confirmModel = await EmailConfirm.findById(hash).exec();
-    if (!confirmModel) {
-      return responseMessage.USER.NO_EMAIL_HASH_FOUND;
-    }
-  } catch (err) {
-    console.error(err);
+  const emailConfirm = await UserDoc.getEmailConfirmById(hash);
+  console.log(emailConfirm);
+  if (!emailConfirm || emailConfirm === responseMessage.DATABASE.ERROR) {
     return responseMessage.USER.NO_EMAIL_HASH_FOUND;
   }
-
-  const user = await UserDoc.getUserById(confirmModel.userId);
+  const user = await UserDoc.getUserById(emailConfirm.userId);
   if (!user) {
     return responseMessage.USER.NOT_FOUND;
   }
-  // TODO set frontend for return value
   if (user === responseMessage.DATABASE.ERROR) {
     return responseMessage.USER.NOT_FOUND;
   }
-
-  return DbTransactions.confirmEmail(user, confirmModel);
+  user.isEmailConfirmed = true;
+  return DbTransactions.confirmEmail(user, emailConfirm);
 }
 
 async function changePassword(username, passwords) {
@@ -189,9 +166,8 @@ async function changePassword(username, passwords) {
   if (!user) {
     return responseMessage.USER.NOT_FOUND;
   }
-  // TODO set frontend for return value
   if (user === responseMessage.DATABASE.ERROR) {
-    return responseMessage.USER.NOT_FOUND;
+    return responseMessage.DATABASE.ERROR;
   }
   let authenticated;
   try {
@@ -225,7 +201,6 @@ async function getUser(username) {
   if (!user) {
     return responseMessage.USER.NOT_FOUND;
   }
-  // TODO set frontend for return value
   if (user === responseMessage.DATABASE.ERROR) {
     return responseMessage.USER.NOT_FOUND;
   }
@@ -237,9 +212,8 @@ async function changeUserData(userId, avatarUrl) {
   if (!user) {
     return responseMessage.USER.NOT_FOUND;
   }
-  // TODO set frontend for return value
   if (user === responseMessage.DATABASE.ERROR) {
-    return responseMessage.USER.NOT_FOUND;
+    return responseMessage.DATABASE.ERROR;
   }
 
   user.avatarUrl = avatarUrl;
@@ -253,9 +227,8 @@ async function changeUserData(userId, avatarUrl) {
     if (!leagues) {
       return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
     }
-    // TODO set frontend for return value
     if (leagues === responseMessage.DATABASE.ERROR) {
-      return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+      return responseMessage.DATABASE.ERROR;
     }
     leagues.forEach(league => {
       league.players.find(player => user._id.equals(player.id)).avatar = user.avatarUrl;

@@ -9,7 +9,9 @@ module.exports = {
   getUserByEmail: getUserByEmail,
   getAllUsers: getAllUsers,
   getAllConfirmEmail: getAllConfirmEmail,
-  getAllForgotPassword: getAllForgotPassword
+  getAllForgotPassword: getAllForgotPassword,
+  getForgotPasswordById: getForgotPasswordById,
+  getEmailConfirmById: getEmailConfirmById
 }
 
 async function getUserById(id) {
@@ -54,4 +56,22 @@ async function getAllConfirmEmail() {
 
 async function getAllForgotPassword() {
   return await ForgotPassword.find({}).exec();
+}
+
+async function getForgotPasswordById(id) {
+  try {
+    return await ForgotPassword.findById(id).exec();
+  } catch(err) {
+    console.error(err);
+    return responseMessage.DATABASE.ERROR;
+  }
+}
+
+async function getEmailConfirmById(id) {
+  try {
+    return await ConfirmEmail.findById(id).exec();
+  } catch(err) {
+    console.error(err);
+    return responseMessage.DATABASE.ERROR;
+  }
 }
