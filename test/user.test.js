@@ -5,8 +5,8 @@ const CryptoJS = require('crypto-js');
 const mongoose = require('mongoose');
 const config = require('../config');
 const User = require('../models/user.model');
-const ForgotPassword = require('../models/forgotPasswordModel');
-const EmailConfirm = require('../models/confirmEmailModel');
+const ForgotPassword = require('../models/forgotpassword.model');
+const EmailConfirm = require('../models/confirmemail.model');
 const jwt = require('jsonwebtoken');
 
 
@@ -40,7 +40,7 @@ describe('User service tests', () => {
         password: 'password',
         email: 'em@ail.com'
       })
-      expect(result).to.equal(responseMessage.USER.USERNAME_TAKEN);
+      expect(result).to.equal(responseMessage.USER.USERNAME_STARTS_WITH_$);
     });
 
     it('username is taken', async () => {
@@ -152,7 +152,7 @@ describe('User service tests', () => {
 
     it('password hash is null', async () => {
       const result = await UserService.newPassword({ hash: null, password: 'password' });
-      expect(result).to.equal(responseMessage.FORGET_PASSWORD.NO_REQUEST_FOUND);
+      expect(result).to.equal(responseMessage.COMMON.ERROR);
     });
 
     it('data object is null', async () => {
@@ -242,6 +242,45 @@ describe('User service tests', () => {
       console.log(result);
       expect(result.hasOwnProperty('token')).to.equal(true);
     });
+  });
 
+  describe('get user by username', () => {
+    it('username is null => no user found', async () => {
+      const result = await UserService.getUser(null);
+      expect(result).to.equal(responseMessage.USER.NOT_FOUND);
+    });
+
+    it('not existing username => no user found', async () => {
+      const result = await UserService.getUser('notExistingUsername');
+      expect(result).to.equal(responseMessage.USER.NOT_FOUND);
+    });
+    
+    it('existing username => user found', async () => {
+      const result = await UserService.getUser('username');
+      expect(result.username).to.equal('username');
+    });
+  });
+
+  describe('change user data', () => {
+    it('user ID is null => no user found', async () => {
+      const result = await UserService.changeUserData(null);
+      expect(result).to.equal(responseMessage.USER.NOT_FOUND);
+    });
+
+    it('not existing user ID => no user found', async () => {
+      const users = await User.find({}).exec();
+      const last = users[users.length - 1];
+      const result = await UserService.changeUserData(last._id + '$');
+      expect(result).to.equal(responseMessage.DATABASE.ERROR);
+    });
+    
+    it('existing user ID => user found', async () => {
+      const users = await User.find({}).exec();
+      const last = users[users.length - 1];
+      const url = 'https://i1.sndcdn.com/artworks-000443987127-ls9a8n-t500x500.jpg';
+      const result = await UserService.changeUserData(last._id, url);
+      const userAfterSave = await User.findById(last._id);
+      expect(userAfterSave.avatarUrl).to.equal(url);
+    });
   });
 });

@@ -14,6 +14,8 @@ module.exports = async function () {
   
   await WeekTrackerDoc.initWeekTracker();
 
+  // await ScheduleService.createNewWeek();
+
   // const command = `cd ..; mongodump --forceTableScan --uri mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASS}@cluster0-m8z4s.mongodb.net/${process.env.DB_NAME}`
   // exec(command, (error, stdout, stderr) => {
   //   if (error) {

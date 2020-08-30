@@ -22,11 +22,13 @@ module.exports = {
 }
 
 async function createLeague(creator, leagueData) {
+  if (!creator || !leagueData) {
+    return;
+  }
   const user = await UserDoc.getUserById(creator.userId);
   if (!user) {
     return responseMessage.USER.NOT_FOUND;
   }
-  // TODO set frontend for return value
   if (user === responseMessage.DATABASE.ERROR) {
     return responseMessage.USER.NOT_FOUND;
   }
@@ -58,8 +60,7 @@ function buildLeague(user, leagueData) {
         numberOfSuperBowl: currentYear - 1965,
         weeks: [],
         standings: [{ id: user._id, name: user.username, score: 0 }],
-        isOpen: true,
-        isCurrent: true
+        isOpen: true
       })
     ],
     leagueAvatarUrl: leagueData.leagueAvatarUrl || null
@@ -145,7 +146,7 @@ async function acceptInvitaion(invitedUserId, leagueId) {
   user.leagues.push({ leagueId: league._id, name: league.name });
   league.invitations.splice(league.invitations.indexOf(user._id));
   league.players.push({ id: user._id, name: user.username, avatar: user.avatarUrl });
-  const currentSeason = league.seasons.find(season => season.isCurrent);
+  const currentSeason = league.seasons.find(season => season.isOpen);
   currentSeason.standings.push({ id: user._id.toString(), name: user.username, score: 0 })
   if (currentSeason.weeks.length) {
     const currentWeek = currentSeason.weeks.find(week => week.isOpen);

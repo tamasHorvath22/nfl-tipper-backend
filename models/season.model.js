@@ -8,7 +8,6 @@ let seasonSchema = new Schema({
     numberOfSuperBowl: Number,
     weeks: [],
     isOpen: Boolean,
-    isCurrent: Boolean,
     standings: []
 }, { timestamps: true });
 

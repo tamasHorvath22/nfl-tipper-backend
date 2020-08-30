@@ -63,10 +63,9 @@ async function createNewSeason() {
       numberOfSuperBowl: currentYear - 1965,
       weeks: [],
       standings: standingsInit,
-      isOpen: true,
-      isCurrent: true
+      isOpen: true
     })
-    league.seasons[league.seasons.length - 1].isCurrent = false;
+    // league.seasons[league.seasons.length - 1].isOpen = false;
     league.seasons.push(newSeason);
   })
   if (await DbTransactions.saveNewSeason(leagues)) {
@@ -259,7 +258,7 @@ async function stepWeekTracker() {
   } else {
     weekTracker.week++;
   }
-  await DbTransactions.saveWeekTrackerModifications(weekTracker);
+  return await DbTransactions.saveWeekTrackerModifications(weekTracker);
 }
 
 async function resetWeekTrackerForNextYear() {
@@ -271,5 +270,5 @@ async function resetWeekTrackerForNextYear() {
   weekTracker.regOrPst = regOrPst.REGULAR;
   weekTracker.week = 1;
 
-  await DbTransactions.saveWeekTrackerModifications(weekTracker);
+  return await DbTransactions.saveWeekTrackerModifications(weekTracker);
 }
