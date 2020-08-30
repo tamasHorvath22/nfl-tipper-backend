@@ -34,7 +34,7 @@ async function createLeague(creator, leagueData) {
   const league = buildLeague(user, leagueData)
   user.leagues.push({ leagueId: league._id, name: league.name });
 
-  let isLeagueSaveSuccess = await DbTransactions.saveNewLeague(user, league);
+  let isLeagueSaveSuccess = await DbTransactions.saveLeagueAndUser(user, league);
   if (!isLeagueSaveSuccess) {
     return responseMessage.LEAGUE.CREATE_FAIL;
   }
@@ -114,7 +114,8 @@ async function sendInvitation(invitorId, inviteData) {
   } else {
     league.invitations.push(invitedUser._id);
     invitedUser.invitations.push({ leagueId: league._id, name: league.name });
-    return await DbTransactions.saveInvitation(invitedUser, league);
+    const isSaveSuccess = await DbTransactions.saveLeagueAndUser(invitedUser, league);
+    return isSaveSuccess ? responseMessage.LEAGUE.INVITATION_SUCCESS : responseMessage.LEAGUE.INVITATION_FAIL
   }
 }
 
@@ -152,7 +153,8 @@ async function acceptInvitaion(invitedUserId, leagueId) {
       game.bets.push({ id: user._id, name: user.username, bet: null });
     })
   }
-  return await DbTransactions.acceptInvitation(user, league);
+  const isSaveSuccess = await DbTransactions.saveLeagueAndUser(user, league);
+  return isSaveSuccess ? user : responseMessage.LEAGUE.JOIN_FAIL;
 };
 
 async function saveWeekBets(userId, leagueId, incomingWeek) {
@@ -180,7 +182,8 @@ async function saveWeekBets(userId, leagueId, incomingWeek) {
     // if (new Date(game.startTime).getTime() > currentTime) {
     // }
   })
-  return await DbTransactions.saveWeekBets(league);
+  const isSaveSuccess = await DbTransactions.updateLeague(league);
+  return isSaveSuccess ? responseMessage.LEAGUE.BET_SAVE_SUCCESS : responseMessage.LEAGUE.BET_SAVE_FAIL;
 };
 
 async function modifyLeague(userId, leagueId, avatarUrl, leagueName) {
@@ -198,7 +201,8 @@ async function modifyLeague(userId, leagueId, avatarUrl, leagueName) {
   league.leagueAvatarUrl = avatarUrl;
   league.name = leagueName;
 
-  return await DbTransactions.modifyLeague(league);
+  const isSaveSuccess = await DbTransactions.updateLeague(league);
+  return isSaveSuccess ? responseMessage.LEAGUE.UPDATE_SUCCESS : responseMessage.LEAGUE.UPDATE_FAIL;
 };
 
 async function triggerManually() {
