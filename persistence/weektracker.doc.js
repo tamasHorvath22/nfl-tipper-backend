@@ -2,6 +2,7 @@ const WeekTracker = require('../models/weektracker.model');
 const Transaction = require('mongoose-transactions');
 const schemas = require('../common/constants/schemas');
 const regOrPst = require('../common/constants/regular-or-postseason');
+const environment = require('../common/constants/environments');
 
 module.exports = {
   getTracker: getTracker,
@@ -12,8 +13,10 @@ async function initWeekTracker() {
   const trackers = await getAllTracker();
 
   if (!trackers || !trackers.length) {
-    // TODO remove -1 for production
-    const currentYear = new Date().getFullYear() - 1;
+    let currentYear = new Date().getFullYear();
+    if (process.env.ENVIRONMENT === environment.DEVELOP) {
+      currentYear--;
+    }
     let weekTracker = WeekTracker({
       year: currentYear,
       week: 1,

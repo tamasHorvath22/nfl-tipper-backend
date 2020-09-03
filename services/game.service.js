@@ -175,7 +175,7 @@ async function randomiseBets() {
 
 async function evaluateWeek() {
   // TODO this fuction is for testing, remove calling it in production
-  await randomiseBets();
+  // await randomiseBets();
 
   const leagues = await LeagueDoc.getAllLeagues();
   if (!leagues) {

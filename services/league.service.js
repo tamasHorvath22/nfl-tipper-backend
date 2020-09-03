@@ -7,6 +7,7 @@ const GameService = require('./game.service');
 const mongoose = require('mongoose');
 const ScheduleService = require('./schedule.service');
 const DbTransactions = require('../persistence/league.transactions');
+const environment = require('../common/constants/environments');
 
 
 module.exports = {
@@ -45,8 +46,10 @@ async function createLeague(creator, leagueData) {
 }
 
 function buildLeague(user, leagueData) {
-  // TODO remove previous year (-1)
-  const currentYear = new Date().getFullYear() -1;
+  let currentYear = new Date().getFullYear();
+  if (process.env.ENVIRONMENT === environment.DEVELOP) {
+    currentYear--;
+  }
 
   return League({
     name: leagueData.name,
@@ -167,25 +170,34 @@ async function saveWeekBets(userId, leagueId, incomingWeek) {
   if (league === responseMessage.DATABASE.ERROR) {
     return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
   }
-  // TODO remove previous year (-1)
-  const currentYear = new Date().getFullYear() - 1;
+  let currentYear = new Date().getFullYear();
+  if (process.env.ENVIRONMENT === environment.DEVELOP) {
+    currentYear--;
+  }
   const currentSeason = league.seasons.find(season => season.year === currentYear);
   const currentWeek = currentSeason.weeks.find(weekToFind => weekToFind._id.equals(incomingWeek._id));
   const currentTime = new Date().getTime();
 
   currentWeek.games.forEach(game => {
-    const betToSave = game.bets.find(bet => bet.id.equals(userId));
-    const incomingGame = incomingWeek.games.find(incGame => {
-      return mongoose.Types.ObjectId(incGame._id).equals(mongoose.Types.ObjectId(game._id))
-    });
-    betToSave.bet = incomingGame.bets.find(bet => bet.id === userId).bet;
-    // TODO put back the code inside this commented if statement
-    // if (new Date(game.startTime).getTime() > currentTime) {
-    // }
+    if (process.env.ENVIRONMENT === environment.DEVELOP) {
+      setBets(userId, game, incomingWeek);
+    } else {
+      if (new Date(game.startTime).getTime() > currentTime) {
+        setBets(userId, game, incomingWeek);
+      }
+    }
   })
   const isSaveSuccess = await DbTransactions.updateLeague(league);
   return isSaveSuccess ? responseMessage.LEAGUE.BET_SAVE_SUCCESS : responseMessage.LEAGUE.BET_SAVE_FAIL;
 };
+
+function setBets(userId, game, incomingWeek) {
+  const betToSave = game.bets.find(bet => bet.id.equals(userId));
+  const incomingGame = incomingWeek.games.find(incGame => {
+    return mongoose.Types.ObjectId(incGame._id).equals(mongoose.Types.ObjectId(game._id))
+  });
+  betToSave.bet = incomingGame.bets.find(bet => bet.id === userId).bet;
+}
 
 async function modifyLeague(userId, leagueId, avatarUrl, leagueName) {
   const league = await LeagueDoc.getLeagueById(leagueId);
