@@ -66,7 +66,11 @@ module.exports = function(app) {
     }
   */
   app.post('/api/league/save-week-bets', jsonParser, async function (req, res) {
-    res.send(await LeagueService.saveWeekBets(req.decoded.userId, req.body.leagueId, req.body.week));
+    res.send(await LeagueService.saveWeekBets(
+      req.decoded.userId,
+      req.body.leagueId,
+      req.body.week,
+      req.body.isForAllLeagues));
   });
 
   /* 

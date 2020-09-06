@@ -5,7 +5,7 @@ const schemas = require('../common/constants/schemas');
 module.exports = {
   saveClosedWeeks: saveClosedWeeks,
   saveLeagueAndUser: saveLeagueAndUser,
-  updateLeague: updateLeague
+  updateLeagues: updateLeagues
 }
 
 async function saveLeagueAndUser(user, league) {
@@ -24,10 +24,12 @@ async function saveLeagueAndUser(user, league) {
   };
 }
 
-async function updateLeague(league) {
+async function updateLeagues(leagues) {
   const transaction = new Transaction(true);
-  league.markModified('seasons')
-  transaction.insert(schemas.LEAGUE, league);
+  leagues.forEach(league => {
+    league.markModified('seasons')
+    transaction.insert(schemas.LEAGUE, league);
+  })
 
   try {
     await transaction.run();

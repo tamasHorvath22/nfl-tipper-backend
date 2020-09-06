@@ -161,21 +161,46 @@ async function acceptInvitaion(invitedUserId, leagueId) {
   return isSaveSuccess ? user : responseMessage.LEAGUE.JOIN_FAIL;
 };
 
-async function saveWeekBets(userId, leagueId, incomingWeek) {
-  const league = await LeagueDoc.getLeagueById(leagueId);
-  if (!league) {
-    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+async function saveWeekBets(userId, leagueId, incomingWeek, isForAllLeagues) {
+  let leagueList = [];
+  if (isForAllLeagues) {
+    const user = await UserDoc.getUserById(userId);
+    if (!user || user === responseMessage.DATABASE.ERROR) {
+      return responseMessage.DATABASE.ERROR;
+    }
+    const leagueIdList = [];
+    user.leagues.forEach(league => {
+      leagueIdList.push(league.leagueId);
+    });
+    leagueList = await LeagueDoc.getLeaguesByIds(leagueIdList);
+    if (!leagueList || leagueList === responseMessage.DATABASE.ERROR) {
+      return responseMessage.DATABASE.ERROR;
+    }
+  } else {
+    const league = await LeagueDoc.getLeagueById(leagueId);
+    if (!league) {
+      return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+    }
+    // TODO set frontend for return value
+    if (league === responseMessage.DATABASE.ERROR) {
+      return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+    }
+    leagueList = [league];
   }
-  // TODO set frontend for return value
-  if (league === responseMessage.DATABASE.ERROR) {
-    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
-  }
+  leagueList.forEach(league => {
+    saveBestForOneLeague(userId, league, incomingWeek);
+  })
+  const isSaveSuccess = await DbTransactions.updateLeagues(leagueList);
+  return isSaveSuccess ? responseMessage.LEAGUE.BET_SAVE_SUCCESS : responseMessage.LEAGUE.BET_SAVE_FAIL;
+};
+
+function saveBestForOneLeague(userId, league, incomingWeek) {
   let currentYear = new Date().getFullYear();
   if (process.env.ENVIRONMENT === environment.DEVELOP) {
     currentYear--;
   }
   const currentSeason = league.seasons.find(season => season.year === currentYear);
-  const currentWeek = currentSeason.weeks.find(weekToFind => weekToFind._id.equals(incomingWeek._id));
+  const currentWeek = currentSeason.weeks.find(weekToFind => weekToFind.number === incomingWeek.number);
   const currentTime = new Date().getTime();
 
   currentWeek.games.forEach(game => {
@@ -187,14 +212,12 @@ async function saveWeekBets(userId, leagueId, incomingWeek) {
       }
     }
   })
-  const isSaveSuccess = await DbTransactions.updateLeague(league);
-  return isSaveSuccess ? responseMessage.LEAGUE.BET_SAVE_SUCCESS : responseMessage.LEAGUE.BET_SAVE_FAIL;
-};
+}
 
 function setBets(userId, game, incomingWeek) {
   const betToSave = game.bets.find(bet => bet.id.equals(userId));
   const incomingGame = incomingWeek.games.find(incGame => {
-    return mongoose.Types.ObjectId(incGame._id).equals(mongoose.Types.ObjectId(game._id))
+    return incGame.gameId === game.gameId
   });
   betToSave.bet = incomingGame.bets.find(bet => bet.id === userId).bet;
 }
@@ -214,7 +237,7 @@ async function modifyLeague(userId, leagueId, avatarUrl, leagueName) {
   league.leagueAvatarUrl = avatarUrl;
   league.name = leagueName;
 
-  const isSaveSuccess = await DbTransactions.updateLeague(league);
+  const isSaveSuccess = await DbTransactions.updateLeagues([league]);
   return isSaveSuccess ? responseMessage.LEAGUE.UPDATE_SUCCESS : responseMessage.LEAGUE.UPDATE_FAIL;
 };
 
