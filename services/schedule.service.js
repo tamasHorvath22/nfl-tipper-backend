@@ -55,8 +55,10 @@ async function closeWeek() {
   }
 
   allLeagues.forEach(league => {
-    // TODO remove previous year (-1)
-    const currentYear = new Date().getFullYear() - 1;
+    const currentYear = new Date().getFullYear();
+    // if (process.env.ENVIRONMENT === environment.DEVELOP) {
+    //   currentYear--;
+    // }
     const currentSeason = league.seasons.find(season => season.year === weekTracker.year);
     const currentWeek = currentSeason.weeks[currentSeason.weeks.length - 1];
     currentWeek.isOpen = false;

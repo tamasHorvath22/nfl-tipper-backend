@@ -2,6 +2,7 @@ const schemas = require('../common/constants/schemas');
 const bodyParser = require('body-parser');
 const jsonParser = bodyParser.json();
 const LeagueService = require('../services/league.service');
+const GameService = require('../services/game.service');
 const BackupService = require('../services/backup.service');
 
 module.exports = function(app) {
@@ -114,6 +115,26 @@ module.exports = function(app) {
   app.post('/api/league/create-backup', jsonParser, async function (req, res) {
     if (req.decoded.isAdmin) {
       res.send(await BackupService.saveBackup());
+    }
+  });
+
+  /* 
+    request: 
+      no data
+  */
+  app.post('/api/league/new-evaluate', jsonParser, async function (req, res) {
+    if (req.decoded.isAdmin) {
+      res.send(await GameService.evaluate());
+    }
+  });
+
+  /* 
+    request: 
+      no data
+  */
+  app.post('/api/league/emergency-new-week', jsonParser, async function (req, res) {
+    if (req.decoded.isAdmin) {
+      res.send(await GameService.createNewWeekAndGames());
     }
   });
 

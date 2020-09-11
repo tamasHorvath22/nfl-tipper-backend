@@ -47,9 +47,9 @@ async function createLeague(creator, leagueData) {
 
 function buildLeague(user, leagueData) {
   let currentYear = new Date().getFullYear();
-  if (process.env.ENVIRONMENT === environment.DEVELOP) {
-    currentYear--;
-  }
+  // if (process.env.ENVIRONMENT === environment.DEVELOP) {
+  //   currentYear--;
+  // }
 
   return League({
     name: leagueData.name,
@@ -196,21 +196,24 @@ async function saveWeekBets(userId, leagueId, incomingWeek, isForAllLeagues) {
 
 function saveBestForOneLeague(userId, league, incomingWeek) {
   let currentYear = new Date().getFullYear();
-  if (process.env.ENVIRONMENT === environment.DEVELOP) {
-    currentYear--;
-  }
+  // if (process.env.ENVIRONMENT === environment.DEVELOP) {
+  //   currentYear--;
+  // }
   const currentSeason = league.seasons.find(season => season.year === currentYear);
   const currentWeek = currentSeason.weeks.find(weekToFind => weekToFind.number === incomingWeek.number);
   const currentTime = new Date().getTime();
 
   currentWeek.games.forEach(game => {
-    if (process.env.ENVIRONMENT === environment.DEVELOP) {
+    if (new Date(game.startTime).getTime() > currentTime) {
       setBets(userId, game, incomingWeek);
-    } else {
-      if (new Date(game.startTime).getTime() > currentTime) {
-        setBets(userId, game, incomingWeek);
-      }
     }
+    // if (process.env.ENVIRONMENT === environment.DEVELOP) {
+    //   setBets(userId, game, incomingWeek);
+    // } else {
+    //   if (new Date(game.startTime).getTime() > currentTime) {
+    //     setBets(userId, game, incomingWeek);
+    //   }
+    // }
   })
 }
 

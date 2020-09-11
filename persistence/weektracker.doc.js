@@ -14,9 +14,9 @@ async function initWeekTracker() {
 
   if (!trackers || !trackers.length) {
     let currentYear = new Date().getFullYear();
-    if (process.env.ENVIRONMENT === environment.DEVELOP) {
-      currentYear--;
-    }
+    // if (process.env.ENVIRONMENT === environment.DEVELOP) {
+    //   currentYear--;
+    // }
     let weekTracker = WeekTracker({
       year: currentYear,
       week: 1,

@@ -9,13 +9,16 @@ const WeekTrackerDoc = require('../persistence/weektracker.doc');
 const regOrPst = require('../common/constants/regular-or-postseason');
 const DbTransactions = require('../persistence/game.transactions');
 const responseMessage = require('../common/constants/api-response-messages');
+const sleep = require('util').promisify(setTimeout);
+
 
 module.exports = {
   createNewWeekForLeague: createNewWeekForLeague,
   createNewWeekAndGames: createNewWeekAndGames,
   evaluateWeek: evaluateWeek,
   stepWeekTracker: stepWeekTracker,
-  createNewSeason: createNewSeason
+  createNewSeason: createNewSeason,
+  evaluate: evaluate
 }
 
 async function getWeekData() {
@@ -95,7 +98,7 @@ async function createNewWeekAndGames() {
     }
     currentSeason.weeks.push(initNewWeek(weekData, league));
   })
-  await DbTransactions.saveSeasonModifications(leagues);
+  return await DbTransactions.saveSeasonModifications(leagues);
 }
 
 async function createNewWeekForLeague(leagueId) {
@@ -236,6 +239,88 @@ async function evaluateWeek() {
   } else {
     return responseMessage.LEAGUE.UPDATE_FAIL;
   }
+}
+
+async function evaluate() {
+  const leagues = await LeagueDoc.getAllLeagues();
+  if (!leagues) {
+    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+  }
+  if (leagues === responseMessage.DATABASE.ERROR) {
+    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+  }
+  const weekResults = await getWeekData();
+  if (!weekResults) {
+    return responseMessage.LEAGUE.UPDATE_FAIL;
+  }
+  const isThisSuperBowlWeek = isSuperBowlWeek(weekResults);
+  let isWeekOver = false;
+  
+  leagues.forEach(league => {
+    const resultObject = { isWeekOver: true };
+    league.players.forEach(player => {
+      resultObject[player.id] = 0;
+    })
+    const currentSeason = league.seasons.find(season => season.year === weekResults.year);
+    const currWeek = currentSeason.weeks.find(week => week.weekId === weekResults.week.id);
+    const doWeekResults = doWeek(currWeek.games, weekResults.week.games, resultObject);
+    currentSeason.standings.forEach(standing => {
+      standing.score += doWeekResults[standing.id];
+    })
+    if (doWeekResults.isWeekOver) {
+      isWeekOver = true;
+      currWeek.isOpen = false;
+      if (isThisSuperBowlWeek) {
+        currentSeason.isOpen = false;
+      }
+    }
+  });
+  const isSaveSuccess = await DbTransactions.saveSeasonModifications(leagues);
+  if (!isSaveSuccess) {
+    return responseMessage.LEAGUE.UPDATE_FAIL;
+  }
+  if (!isWeekOver) {
+    return responseMessage.WEEK.EVALUATION_SUCCESS;
+  }
+  const isStepTrackerSuccess = await stepWeekTracker();
+  if (isStepTrackerSuccess) {
+    await sleep(10000);
+    const isCreateSuccess = await createNewWeekAndGames();
+    return isCreateSuccess ? responseMessage.WEEK.EVALUATION_SUCCESS : responseMessage.WEEK.EVALUATION_FAIL;
+  }
+}
+
+function doWeek(leagueGames, gamesResults, resultObject) {
+  gamesResults.forEach(gameResult => {
+    if (gameResult.status === gameStatus.SCHEDULED) {
+      resultObject.isWeekOver = false;
+      return;
+    }
+    const gameToEvaluate = leagueGames.find(game => game.gameId === gameResult.id);
+    if (!gameToEvaluate.isOpen) {
+      return;
+    }
+    const scoring = gameResult.scoring;
+    gameToEvaluate.status = gameResult.status;
+    gameToEvaluate.homeScore = scoring.home_points;
+    gameToEvaluate.awayScore = scoring.away_points;
+    if (gameToEvaluate.homeScore > gameToEvaluate.awayScore) {
+      gameToEvaluate.winner = winnerTeam.HOME;
+      gameToEvaluate.winnerTeamAlias = gameToEvaluate.homeTeamAlias;
+    } else if (gameToEvaluate.homeScore < gameToEvaluate.awayScore) {
+      gameToEvaluate.winner = winnerTeam.AWAY;
+      gameToEvaluate.winnerTeamAlias = gameToEvaluate.awayTeamAlias;
+    } else {
+      gameToEvaluate.winner = winnerTeam.TIE;
+    }
+    gameToEvaluate.isOpen = false;
+    gameToEvaluate.bets.forEach(bet => {
+      if (bet.bet === gameToEvaluate.winner) {
+        resultObject[bet.id]++;
+      }
+    })
+  })
+  return resultObject;
 }
 
 function isSuperBowlWeek(week) {
