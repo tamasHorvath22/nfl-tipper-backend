@@ -292,7 +292,7 @@ async function evaluate() {
 
 function doWeek(leagueGames, gamesResults, resultObject) {
   gamesResults.forEach(gameResult => {
-    if (gameResult.status === gameStatus.SCHEDULED) {
+    if (gameResult.status !== gameStatus.CLOSED) {
       resultObject.isWeekOver = false;
       return;
     }
