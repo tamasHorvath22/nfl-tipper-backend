@@ -8,5 +8,6 @@ module.exports = Object.freeze({
     FORGOT_PASSWORD: 'ForgotPassword',
     BET: 'Bet',
     WEEK_TRACKER: 'WeekTracker',
-    BACKUP: 'Backup'
+    BACKUP: 'Backup',
+    TEAM_STANDINGS: 'TeamStandings'
 })

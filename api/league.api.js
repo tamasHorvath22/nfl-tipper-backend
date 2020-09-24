@@ -140,6 +140,14 @@ module.exports = function(app) {
 
   /* 
     request: 
+      no data
+  */
+  app.post('/api/league/get-teams-standings', jsonParser, async function (req, res) {
+    res.send(await GameService.getTeamStandings());
+  });
+
+  /* 
+    request: 
     { 
       leagueId: leagueId,
       invitedEmail: invitedEmail

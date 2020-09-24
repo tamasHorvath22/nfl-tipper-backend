@@ -6,6 +6,7 @@ const SeasonModel = require('../models/season.model');
 const gameStatus = require('../common/constants/game-status');
 const winnerTeam = require('../common/constants/team');
 const WeekTrackerDoc = require('../persistence/weektracker.doc');
+const TeamStandingsDoc = require('../persistence/team.standings.doc');
 const regOrPst = require('../common/constants/regular-or-postseason');
 const DbTransactions = require('../persistence/game.transactions');
 const responseMessage = require('../common/constants/api-response-messages');
@@ -18,7 +19,9 @@ module.exports = {
   evaluateWeek: evaluateWeek,
   stepWeekTracker: stepWeekTracker,
   createNewSeason: createNewSeason,
-  evaluate: evaluate
+  evaluate: evaluate,
+  setTeamStandings: setTeamStandings,
+  getTeamStandings: getTeamStandings
 }
 
 async function getWeekData() {
@@ -279,6 +282,9 @@ async function evaluate() {
   if (!isSaveSuccess) {
     return responseMessage.LEAGUE.UPDATE_FAIL;
   }
+  await sleep(10000);
+  await setTeamStandings();
+
   if (!isWeekOver) {
     return responseMessage.WEEK.EVALUATION_SUCCESS;
   }
@@ -344,6 +350,47 @@ async function stepWeekTracker() {
     weekTracker.week++;
   }
   return await DbTransactions.saveWeekTrackerModifications(weekTracker);
+}
+
+async function setTeamStandings() {
+  const path = `https://api.sportradar.us/nfl/official/trial/v5/en/seasons/2020/standings.json?api_key=${process.env.SPORTRADAR_KEY}`
+  let data;
+  try {
+    data = await axios.get(path);
+  } catch(err) {
+    console.error(err);
+    return responseMessage.DATABASE.ERROR;
+  }
+  const savedStandings = await TeamStandingsDoc.findByYear(data.data.season.year);
+  if (savedStandings === responseMessage.DATABASE.ERROR) {
+    return responseMessage.DATABASE.ERROR;
+  }
+  const standings = savedStandings.length ? savedStandings[0] : { year: data.data.season.year, teams: {} };
+
+  data.data.conferences.forEach(conf => {
+    conf.divisions.forEach(div => {
+      div.teams.forEach(team => {
+        standings.teams[team.alias] = {
+          win: team.wins,
+          loss: team.losses,
+          tie: team.ties
+        }
+      })
+    })
+  })
+  return await TeamStandingsDoc.save(standings);
+}
+
+async function getTeamStandings() {
+  const weekTracker = await WeekTrackerDoc.getTracker();
+  if (!weekTracker) {
+    return responseMessage.DATABASE.ERROR;
+  }
+  const teasmStandings = await TeamStandingsDoc.findByYear(weekTracker.year);
+  if (teasmStandings === responseMessage.DATABASE.ERROR) {
+    return responseMessage.DATABASE.ERROR;
+  }
+  return teasmStandings[0];
 }
 
 async function resetWeekTrackerForNextYear() {
