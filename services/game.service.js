@@ -3,6 +3,7 @@ const LeagueDoc = require('../persistence/league.doc');
 const GameModel = require('../models/game.model');
 const WeekModel = require('../models/week.model');
 const SeasonModel = require('../models/season.model');
+const TeamStandingsModel = require('../models/teams.standing.model');
 const gameStatus = require('../common/constants/game-status');
 const winnerTeam = require('../common/constants/team');
 const WeekTrackerDoc = require('../persistence/weektracker.doc');
@@ -365,12 +366,20 @@ async function setTeamStandings() {
   if (savedStandings === responseMessage.DATABASE.ERROR) {
     return responseMessage.DATABASE.ERROR;
   }
-  const standings = savedStandings.length ? savedStandings[0] : { year: data.data.season.year, teams: {} };
+  let newStandings;
+  if (!savedStandings.length) {
+    newStandings = TeamStandingsModel({
+      year: data.data.season.year,
+      teams: {}
+    });
+  } else {
+    newStandings = savedStandings[0];
+  }
 
   data.data.conferences.forEach(conf => {
     conf.divisions.forEach(div => {
       div.teams.forEach(team => {
-        standings.teams[team.alias] = {
+        newStandings.teams[team.alias] = {
           win: team.wins,
           loss: team.losses,
           tie: team.ties
@@ -378,7 +387,7 @@ async function setTeamStandings() {
       })
     })
   })
-  return await TeamStandingsDoc.save(standings);
+  return await TeamStandingsDoc.save(newStandings);
 }
 
 async function getTeamStandings() {
