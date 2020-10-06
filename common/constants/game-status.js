@@ -4,5 +4,7 @@ module.exports = Object.freeze({
   IN_PROGRESS: 'inprogress',
   CREATED: 'created',
   HALFTIME: 'halftime',
-  COMPLETE: 'complete'
+  COMPLETE: 'complete',
+  POSTPONED: 'postponed',
+  TIME_TBD:  'time-tbd'
 })
