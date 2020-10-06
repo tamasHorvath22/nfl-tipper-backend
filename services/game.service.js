@@ -246,7 +246,6 @@ async function evaluateWeek() {
 }
 
 async function evaluate() {
-  console.log('evalute starts')
   const leagues = await LeagueDoc.getAllLeagues();
   if (!leagues) {
     return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
@@ -300,8 +299,6 @@ async function evaluate() {
 
 function doWeek(leagueGames, gamesResults, resultObject) {
   gamesResults.forEach(gameResult => {
-    console.log(gameResult.status)
-    console.log(!(gameResult.status === gameStatus.CLOSED || gameResult.status === gameStatus.POSTPONED))
     if (!(gameResult.status === gameStatus.CLOSED || gameResult.status === gameStatus.POSTPONED)) {
       resultObject.isWeekOver = false;
       return;
