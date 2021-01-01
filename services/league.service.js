@@ -8,7 +8,7 @@ const mongoose = require('mongoose');
 const ScheduleService = require('./schedule.service');
 const DbTransactions = require('../persistence/league.transactions');
 const environment = require('../common/constants/environments');
-
+const WeekTrackerDoc = require('../persistence/weektracker.doc');
 
 module.exports = {
   createLeague: createLeague,
@@ -187,15 +187,19 @@ async function saveWeekBets(userId, leagueId, incomingWeek, isForAllLeagues) {
     }
     leagueList = [league];
   }
+  const weekTracker = await WeekTrackerDoc.getTracker();
+  if (!weekTracker) {
+    return responseMessage.LEAGUE.BET_SAVE_FAIL;
+  }
+  const currentYear = weekTracker.year;
   leagueList.forEach(league => {
-    saveBestForOneLeague(userId, league, incomingWeek);
+    saveBetsForOneLeague(userId, league, incomingWeek, currentYear);
   })
   const isSaveSuccess = await DbTransactions.updateLeagues(leagueList);
   return isSaveSuccess ? responseMessage.LEAGUE.BET_SAVE_SUCCESS : responseMessage.LEAGUE.BET_SAVE_FAIL;
 };
 
-function saveBestForOneLeague(userId, league, incomingWeek) {
-  let currentYear = new Date().getFullYear();
+function saveBetsForOneLeague(userId, league, incomingWeek, currentYear) {
   // if (process.env.ENVIRONMENT === environment.DEVELOP) {
   //   currentYear--;
   // }
