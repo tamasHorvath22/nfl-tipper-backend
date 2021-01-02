@@ -17,6 +17,7 @@ let gameSchema = new Schema({
     isOpen: Boolean,
     winner: String,
     winnerTeamAlias: String,
+    winnerValue: String,
     bets: []
 }, { timestamps: true });
 

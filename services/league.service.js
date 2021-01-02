@@ -34,7 +34,10 @@ async function createLeague(creator, leagueData) {
     return responseMessage.USER.NOT_FOUND;
   }
 
-  const league = buildLeague(user, leagueData)
+  const league = await buildLeague(user, leagueData)
+  if (league === responseMessage.LEAGUE.CREATE_FAIL) {
+    return responseMessage.LEAGUE.CREATE_FAIL;
+  }
   user.leagues.push({ leagueId: league._id, name: league.name });
 
   let isLeagueSaveSuccess = await DbTransactions.saveLeagueAndUser(user, league);
@@ -45,8 +48,12 @@ async function createLeague(creator, leagueData) {
   return user;
 }
 
-function buildLeague(user, leagueData) {
-  let currentYear = new Date().getFullYear();
+async function buildLeague(user, leagueData) {
+  const weekTracker = await WeekTrackerDoc.getTracker();
+  if (!weekTracker) {
+    return responseMessage.LEAGUE.CREATE_FAIL;
+  }
+  let currentYear = weekTracker.year;
   // if (process.env.ENVIRONMENT === environment.DEVELOP) {
   //   currentYear--;
   // }
@@ -208,9 +215,12 @@ function saveBetsForOneLeague(userId, league, incomingWeek, currentYear) {
   const currentTime = new Date().getTime();
 
   currentWeek.games.forEach(game => {
+    
+    // TODO put saveBets inside this if
     if (new Date(game.startTime).getTime() > currentTime) {
       setBets(userId, game, incomingWeek);
     }
+    
     // if (process.env.ENVIRONMENT === environment.DEVELOP) {
     //   setBets(userId, game, incomingWeek);
     // } else {

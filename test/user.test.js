@@ -239,7 +239,6 @@ describe('User service tests', () => {
           newPassword: CryptoJS.AES.encrypt('more_new_password', process.env.PASSWORD_SECRET_KEY).toString()
         }
       );
-      console.log(result);
       expect(result.hasOwnProperty('token')).to.equal(true);
     });
   });

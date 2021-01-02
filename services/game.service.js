@@ -12,6 +12,7 @@ const regOrPst = require('../common/constants/regular-or-postseason');
 const DbTransactions = require('../persistence/game.transactions');
 const responseMessage = require('../common/constants/api-response-messages');
 const sleep = require('util').promisify(setTimeout);
+const BetTypes = require('../common/constants/bet.types');
 
 
 module.exports = {
@@ -148,6 +149,7 @@ function initNewWeek(weekData, league) {
       isOpen: true,
       winner: null,
       winnerTeamAlias: null,
+      winnerValue: null,
       bets: []
     })
     league.players.forEach(player => {
@@ -215,20 +217,54 @@ async function evaluateWeek() {
       gameToEvaluate.status = gameResult.status;
       gameToEvaluate.homeScore = scoring.home_points;
       gameToEvaluate.awayScore = scoring.away_points;
-      if (gameToEvaluate.homeScore > gameToEvaluate.awayScore) {
+
+      const pointDiff = gameToEvaluate.homeScore - gameToEvaluate.awayScore;
+
+      if (pointDiff === 0) {
+        gameToEvaluate.winner = winnerTeam.TIE;
+        gameToEvaluate.winnerValue = BetTypes.TIE;
+      } else if (pointDiff <= -15) {
+        gameToEvaluate.winnerValue = BetTypes.AWAY_15_PLUS;
+      } else if (pointDiff <= -8) {
+        gameToEvaluate.winnerValue = BetTypes.AWAY_8_14;
+      } else if (pointDiff <= -4) {
+        gameToEvaluate.winnerValue = BetTypes.AWAY_4_7;
+      } else if (pointDiff <= -1) {
+        gameToEvaluate.winnerValue = BetTypes.AWAY_0_3;
+      } else if (pointDiff <= 3) {
+        gameToEvaluate.winnerValue = BetTypes.HOME_0_3;
+      } else if (pointDiff <= 7) {
+        gameToEvaluate.winnerValue = BetTypes.HOME_4_7;
+      } else if (pointDiff <= 14) {
+        gameToEvaluate.winnerValue = BetTypes.HOME_8_14;
+      } else if (pointDiff >= 15) {
+        gameToEvaluate.winnerValue = BetTypes.HOME_15_PLUS;
+      }
+
+      if (pointDiff > 0) {
         gameToEvaluate.winner = winnerTeam.HOME;
         gameToEvaluate.winnerTeamAlias = gameToEvaluate.homeTeamAlias;
-      } else if (gameToEvaluate.homeScore < gameToEvaluate.awayScore) {
+      } else if (pointDiff < 0) {
         gameToEvaluate.winner = winnerTeam.AWAY;
         gameToEvaluate.winnerTeamAlias = gameToEvaluate.awayTeamAlias;
-      } else {
-        gameToEvaluate.winner = winnerTeam.TIE;
       }
       gameToEvaluate.bets.forEach(bet => {
-        if (bet.bet === gameToEvaluate.winner) {
-          resultObject[bet.id]++;
+        if (!bet.bet) {
+          return;
+        }
+        if (gameToEvaluate.winnerValue === BetTypes.TIE) {
+          if (bet.bet === BetTypes.HOME_0_3 || bet.bet === BetTypes.AWAY_0_3) {
+            resultObject[bet.id] += 5;
+          }
+        } else {
+          if (bet.bet === gameToEvaluate.winnerValue) {
+            resultObject[bet.id] += 5;
+          } else if (bet.bet.startsWith(gameToEvaluate.winnerValue.subString(0, 4))) {
+            resultObject[bet.id] += 1;
+          }
         }
       })
+
     })
     currentSeason.standings.forEach(standing => {
       standing.score += resultObject[standing.id];
@@ -314,21 +350,55 @@ function doWeek(leagueGames, gamesResults, resultObject) {
     gameToEvaluate.status = gameResult.status;
     gameToEvaluate.homeScore = scoring.home_points;
     gameToEvaluate.awayScore = scoring.away_points;
-    if (gameToEvaluate.homeScore > gameToEvaluate.awayScore) {
+    
+    const pointDiff = gameToEvaluate.homeScore - gameToEvaluate.awayScore;
+
+    if (pointDiff === 0) {
+      gameToEvaluate.winner = winnerTeam.TIE;
+      gameToEvaluate.winnerValue = BetTypes.TIE;
+    } else if (pointDiff <= -15) {
+      gameToEvaluate.winnerValue = BetTypes.AWAY_15_PLUS;
+    } else if (pointDiff <= -8) {
+      gameToEvaluate.winnerValue = BetTypes.AWAY_8_14;
+    } else if (pointDiff <= -4) {
+      gameToEvaluate.winnerValue = BetTypes.AWAY_4_7;
+    } else if (pointDiff <= -1) {
+      gameToEvaluate.winnerValue = BetTypes.AWAY_0_3;
+    } else if (pointDiff <= 3) {
+      gameToEvaluate.winnerValue = BetTypes.HOME_0_3;
+    } else if (pointDiff <= 7) {
+      gameToEvaluate.winnerValue = BetTypes.HOME_4_7;
+    } else if (pointDiff <= 14) {
+      gameToEvaluate.winnerValue = BetTypes.HOME_8_14;
+    } else if (pointDiff >= 15) {
+      gameToEvaluate.winnerValue = BetTypes.HOME_15_PLUS;
+    }
+
+    if (pointDiff > 0) {
       gameToEvaluate.winner = winnerTeam.HOME;
       gameToEvaluate.winnerTeamAlias = gameToEvaluate.homeTeamAlias;
-    } else if (gameToEvaluate.homeScore < gameToEvaluate.awayScore) {
+    } else if (pointDiff < 0) {
       gameToEvaluate.winner = winnerTeam.AWAY;
       gameToEvaluate.winnerTeamAlias = gameToEvaluate.awayTeamAlias;
-    } else {
-      gameToEvaluate.winner = winnerTeam.TIE;
     }
-    gameToEvaluate.isOpen = false;
     gameToEvaluate.bets.forEach(bet => {
-      if (bet.bet === gameToEvaluate.winner) {
-        resultObject[bet.id]++;
+      if (!bet.bet) {
+        return;
+      }
+      if (gameToEvaluate.winnerValue === BetTypes.TIE) {
+        if (bet.bet === BetTypes.HOME_0_3 || bet.bet === BetTypes.AWAY_0_3) {
+          resultObject[bet.id] += 5;
+        }
+      } else {
+        if (bet.bet === gameToEvaluate.winnerValue) {
+          resultObject[bet.id] += 5;
+        } else if (bet.bet.startsWith(gameToEvaluate.winnerValue.substring(0, 4))) {
+          resultObject[bet.id] += 1;
+        }
       }
     })
+
+    gameToEvaluate.isOpen = false;
   })
   return resultObject;
 }
