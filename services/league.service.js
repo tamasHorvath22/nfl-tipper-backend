@@ -19,7 +19,8 @@ module.exports = {
   saveWeekBets: saveWeekBets,
   triggerManually: triggerManually,
   createNewSeason: createNewSeason,
-  modifyLeague: modifyLeague
+  modifyLeague: modifyLeague,
+  saveFinalWinner: saveFinalWinner
 }
 
 async function createLeague(creator, leagueData) {
@@ -70,6 +71,7 @@ async function buildLeague(user, leagueData) {
         numberOfSuperBowl: currentYear - 1965,
         weeks: [],
         standings: [{ id: user._id, name: user.username, score: 0 }],
+        finalWinner: {},
         isOpen: true
       })
     ],
@@ -253,6 +255,25 @@ async function modifyLeague(userId, leagueId, avatarUrl, leagueName) {
   }
   league.leagueAvatarUrl = avatarUrl;
   league.name = leagueName;
+
+  const isSaveSuccess = await DbTransactions.updateLeagues([league]);
+  return isSaveSuccess ? responseMessage.LEAGUE.UPDATE_SUCCESS : responseMessage.LEAGUE.UPDATE_FAIL;
+};
+
+async function saveFinalWinner(userId, leagueId, finalWinner) {
+  const league = await LeagueDoc.getLeagueById(leagueId);
+  if (!league) {
+    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+  }
+  // TODO set frontend for return value
+  if (league === responseMessage.DATABASE.ERROR) {
+    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+  }
+  const currentSeason = league.seasons.find(season => season.isOpen);
+  if (!currentSeason.finalWinner) {
+    currentSeason.finalWinner = {}
+  }
+  currentSeason.finalWinner[userId] = finalWinner;
 
   const isSaveSuccess = await DbTransactions.updateLeagues([league]);
   return isSaveSuccess ? responseMessage.LEAGUE.UPDATE_SUCCESS : responseMessage.LEAGUE.UPDATE_FAIL;

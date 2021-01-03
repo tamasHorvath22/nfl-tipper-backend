@@ -74,6 +74,22 @@ module.exports = function(app) {
       req.body.isForAllLeagues));
   });
 
+
+  /* 
+    request: 
+    { 
+      leagueId: leagueId
+      finalWinner: finalWinner
+    }
+  */
+  app.post('/api/league/save-final-winner', jsonParser, async function (req, res) {
+    res.send(await LeagueService.saveFinalWinner(
+      req.decoded.userId,
+      req.body.leagueId,
+      req.body.finalWinner
+    ));
+  });
+
   /* 
     request: 
       no data

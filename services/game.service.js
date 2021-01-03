@@ -71,6 +71,7 @@ async function createNewSeason() {
       numberOfSuperBowl: currentYear - 1965,
       weeks: [],
       standings: standingsInit,
+      finalWinner: {},
       isOpen: true
     })
     // league.seasons[league.seasons.length - 1].isOpen = false;
@@ -312,6 +313,7 @@ async function evaluate() {
       currWeek.isOpen = false;
       if (isThisSuperBowlWeek) {
         currentSeason.isOpen = false;
+        checkFinalWinnerBets(currentSeason. getSuperbowlWinner(weekResults.week.games[0]))
       }
     }
   });
@@ -331,6 +333,20 @@ async function evaluate() {
     const isCreateSuccess = await createNewWeekAndGames();
     return isCreateSuccess ? responseMessage.WEEK.EVALUATION_SUCCESS : responseMessage.WEEK.EVALUATION_FAIL;
   }
+}
+
+function getSuperbowlWinner (game) {
+  const winner = game.scoring.home_points > game.scoring.away_points ? 'home' : 'away';
+  return game[winner].alias;
+}
+
+function checkFinalWinnerBets(season, winner) {
+  Object.keys(season.finalWinner).forEach(userId => {
+    if (season.finalWinner[userId] === winner) {
+      // TODO define points
+      season.standings.find(s => s.id === userId).score += 60;
+    }
+  })
 }
 
 function doWeek(leagueGames, gamesResults, resultObject) {
@@ -387,11 +403,11 @@ function doWeek(leagueGames, gamesResults, resultObject) {
       }
       if (gameToEvaluate.winnerValue === BetTypes.TIE) {
         if (bet.bet === BetTypes.HOME_0_3 || bet.bet === BetTypes.AWAY_0_3) {
-          resultObject[bet.id] += 5;
+          resultObject[bet.id] += 4;
         }
       } else {
         if (bet.bet === gameToEvaluate.winnerValue) {
-          resultObject[bet.id] += 5;
+          resultObject[bet.id] += 4;
         } else if (bet.bet.startsWith(gameToEvaluate.winnerValue.substring(0, 4))) {
           resultObject[bet.id] += 1;
         }
