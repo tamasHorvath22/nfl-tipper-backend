@@ -344,7 +344,7 @@ function checkFinalWinnerBets(season, winner) {
   Object.keys(season.finalWinner).forEach(userId => {
     if (season.finalWinner[userId] === winner) {
       // TODO define points
-      season.standings.find(s => s.id === userId).score += 60;
+      season.standings.find(s => s.id === userId).score += 50;
     }
   })
 }
