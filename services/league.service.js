@@ -90,12 +90,8 @@ async function getLeague(leagueId, userId) {
   const currentSeason = league.seasons.find(season => season.isOpen);
   const currentWeek = currentSeason.weeks.find(week => week.isOpen);
   currentWeek.games.forEach(game => {
-    for (let i = 0; i < game.bets.length; i++) {
-      const bet = game.bets[i];
-      if (!bet.id.equals(userId)) {
-        game.bets.splice(i, 1);
-      }
-    }
+    const onlyUser = game.bets.filter(bet => bet.id.equals(userId));
+    game.bets = onlyUser;
   })
   return league;
 }
