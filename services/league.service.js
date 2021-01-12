@@ -34,7 +34,12 @@ async function createLeague(creator, leagueData) {
     return responseMessage.USER.NOT_FOUND;
   }
 
-  const league = buildLeague(user, leagueData)
+  const weekTracker = await WeekTrackerDoc.getTracker();
+  if (!weekTracker) {
+    return responseMessage.DATABASE.ERROR;
+  }
+
+  const league = buildLeague(user, leagueData, weekTracker.year);
   user.leagues.push({ leagueId: league._id, name: league.name });
 
   let isLeagueSaveSuccess = await DbTransactions.saveLeagueAndUser(user, league);
@@ -45,12 +50,10 @@ async function createLeague(creator, leagueData) {
   return user;
 }
 
-function buildLeague(user, leagueData) {
-  let currentYear = new Date().getFullYear();
+function buildLeague(user, leagueData, currentYear) {
   // if (process.env.ENVIRONMENT === environment.DEVELOP) {
   //   currentYear--;
   // }
-
   return League({
     name: leagueData.name,
     creator: user._id,
@@ -75,8 +78,8 @@ async function getLeagueNames(idList) {
   return await LeagueDoc.getLeagueNames(idList);
 }
 
-async function getLeague(id) {
-  const league = await LeagueDoc.getLeagueById(id);
+async function getLeague(leagueId, userId) {
+  const league = await LeagueDoc.getLeagueById(leagueId);
   if (!league) {
     return responseMessage.LEAGUE.NOT_FOUND;
   }
@@ -84,6 +87,16 @@ async function getLeague(id) {
   if (league === responseMessage.DATABASE.ERROR) {
     return responseMessage.LEAGUE.NOT_FOUND;
   }
+  const currentSeason = league.seasons.find(season => season.isOpen);
+  const currentWeek = currentSeason.weeks.find(week => week.isOpen);
+  currentWeek.games.forEach(game => {
+    for (let i = 0; i < game.bets.length; i++) {
+      const bet = game.bets[i];
+      if (!bet.id.equals(userId)) {
+        game.bets.splice(i, 1);
+      }
+    }
+  })
   return league;
 }
 

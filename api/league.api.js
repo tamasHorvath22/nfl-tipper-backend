@@ -45,7 +45,7 @@ module.exports = function(app) {
     }
   */
   app.post('/api/get-league', jsonParser, async (req, res) => {
-    res.send(await LeagueService.getLeague(req.body.leagueId));
+    res.send(await LeagueService.getLeague(req.body.leagueId, req.decoded.userId));
   });
 
   /* 

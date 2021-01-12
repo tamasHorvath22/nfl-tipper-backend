@@ -283,7 +283,7 @@ async function evaluate() {
   if (!isSaveSuccess) {
     return responseMessage.LEAGUE.UPDATE_FAIL;
   }
-  await sleep(10000);
+  await sleep(2000);
   await setTeamStandings();
 
   if (!isWeekOver) {
