@@ -1,6 +1,6 @@
 const bodyParser = require('body-parser');
 const jsonParser = bodyParser.json();
-const UserService = require('../services/user-service');
+const UserService = require('../services/user.service');
 
 module.exports = function(app) {
 

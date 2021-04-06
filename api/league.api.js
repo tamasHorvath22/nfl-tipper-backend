@@ -1,8 +1,9 @@
 const schemas = require('../common/constants/schemas');
 const bodyParser = require('body-parser');
 const jsonParser = bodyParser.json();
-const LeagueService = require('../services/league-service');
-const BackupService = require('../services/backup-service');
+const LeagueService = require('../services/league.service');
+const GameService = require('../services/game.service');
+const BackupService = require('../services/backup.service');
 
 module.exports = function(app) {
   
@@ -44,7 +45,7 @@ module.exports = function(app) {
     }
   */
   app.post('/api/get-league', jsonParser, async (req, res) => {
-    res.send(await LeagueService.getLeague(req.body.leagueId));
+    res.send(await LeagueService.getLeague(req.body.leagueId, req.decoded.userId));
   });
 
   /* 
@@ -66,7 +67,11 @@ module.exports = function(app) {
     }
   */
   app.post('/api/league/save-week-bets', jsonParser, async function (req, res) {
-    res.send(await LeagueService.saveWeekBets(req.decoded.userId, req.body.leagueId, req.body.week));
+    res.send(await LeagueService.saveWeekBets(
+      req.decoded.userId,
+      req.body.leagueId,
+      req.body.week,
+      req.body.isForAllLeagues));
   });
 
   /* 
@@ -111,6 +116,34 @@ module.exports = function(app) {
     if (req.decoded.isAdmin) {
       res.send(await BackupService.saveBackup());
     }
+  });
+
+  /* 
+    request: 
+      no data
+  */
+  app.post('/api/league/new-evaluate', jsonParser, async function (req, res) {
+    if (req.decoded.isAdmin) {
+      res.send(await GameService.evaluate());
+    }
+  });
+
+  /* 
+    request: 
+      no data
+  */
+  app.post('/api/league/emergency-new-week', jsonParser, async function (req, res) {
+    if (req.decoded.isAdmin) {
+      res.send(await GameService.createNewWeekAndGames());
+    }
+  });
+
+  /* 
+    request: 
+      no data
+  */
+  app.post('/api/league/get-teams-standings', jsonParser, async function (req, res) {
+    res.send(await GameService.getTeamStandings());
   });
 
   /* 

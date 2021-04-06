@@ -4,8 +4,8 @@ const schemas = require('../common/constants/schemas');
 const Schema = mongoose.Schema;
 
 let leagueSchema = new Schema({
-    name: { type : String, required: true, unique: true, dropDups: true },
-    creator: { type : String },
+    name: { type: String, required: true },
+    creator: { type: String },
     players: { type: Array },
     invitations: { type: Array },
     leagueAvatarUrl: { type: String },

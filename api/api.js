@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
-const userApi = require('./userApi');
-const leagueApi = require('./leagueApi');
+const userApi = require('./user.api');
+const leagueApi = require('./league.api');
 
 const responseMessage = require('../common/constants/api-response-messages');
 const config = require('../config');

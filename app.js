@@ -1,14 +1,13 @@
 const express = require('express');
 const app = express();
 const api = require('./api/api');
-const mongoose = require('mongoose');
 const config = require('./config');
 const initModule = require('./modules/initModule');
 const cors = require('cors')
+const dbConnection = require('./persistence/database.connection');
 
 app.use(cors())
-mongoose.set('useCreateIndex', true);
-mongoose.connect(config.getDbConnectionString(), { useUnifiedTopology: true, useNewUrlParser: true });
+dbConnection.connectToDatabase(config.getDbConnectionString());
 
 api(app, express.Router());
 initModule();
