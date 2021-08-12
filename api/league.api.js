@@ -105,9 +105,7 @@ module.exports = function(app) {
       no data
   */
   app.post('/api/league/create-new-season', jsonParser, async function (req, res) {
-    if (req.decoded.isAdmin) {
-      res.send(await LeagueService.createNewSeason());
-    }
+    res.send(await LeagueService.createNewSeason(req.decoded.isAdmin));
   });
 
   /* 
@@ -139,9 +137,7 @@ module.exports = function(app) {
       no data
   */
   app.post('/api/league/new-evaluate', jsonParser, async function (req, res) {
-    if (req.decoded.isAdmin) {
-      res.send(await GameService.evaluate());
-    }
+    res.send(await GameService.evaluate(req.decoded.isAdmin));
   });
 
   /* 

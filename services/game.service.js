@@ -43,17 +43,25 @@ async function getWeekData() {
   }
 }
 
-async function createNewSeason() {
+async function createNewSeason(isAdmin) {
+  const weekTracker = await WeekTrackerDoc.getTracker();
+  if (
+    !isAdmin ||
+    !weekTracker ||
+    weekTracker.regOrPst === regOrPst.REGULAR ||
+    weekTracker.week !== 4
+  ) {
+    // TODO frontend
+    return responseMessage.DATABASE.ERROR;
+  }
+
   const resetWeekTrackerResult = await resetWeekTrackerForNextYear();
   if (!resetWeekTrackerResult) {
     console.log('Before new season creation, week tracker reset failed.');
     return responseMessage.SEASON.CREATE_FAIL;
   }
   const leagues = await LeagueDoc.getAllLeagues();
-  if (!leagues) {
-    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
-  }
-  if (leagues === responseMessage.DATABASE.ERROR) {
+  if (!leagues || leagues === responseMessage.DATABASE.ERROR) {
     return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
   }
   const currentYear = new Date().getFullYear();
@@ -61,23 +69,29 @@ async function createNewSeason() {
     if (league.seasons.find(season => season.year === currentYear)) {
       return;
     }
-    standingsInit = [];
+    const prevSeason = league.seasons.find(season => season.year === currentYear - 1);
+    if (prevSeason) {
+      prevSeason.isOpen = false;
+    }
+    const finalWinnerObj = {};
     league.players.forEach(player => {
-      standingsInit.push({ id: player.id, name: player.name, score: 0 })
-    })
+      finalWinnerObj[player.id] = null;
+    });
+
     const newSeason = SeasonModel({
       year: currentYear,
       numberOfSeason: currentYear - 1919,
       numberOfSuperBowl: currentYear - 1965,
       weeks: [],
-      standings: standingsInit,
-      finalWinner: {},
+      standings: league.players.map(player => {
+        return { id: player.id, name: player.name, score: 0 }
+      }),
+      finalWinner: finalWinnerObj,
       isOpen: true
     })
-    // league.seasons[league.seasons.length - 1].isOpen = false;
     league.seasons.push(newSeason);
   })
-  if (await DbTransactions.saveNewSeason(leagues)) {
+  if (await DbTransactions.saveNewSeasonAndWeektracker(leagues, resetWeekTrackerResult)) {
     await createNewWeekAndGames();
     return responseMessage.SEASON.CREATE_SUCCESS;
   }
@@ -129,7 +143,7 @@ async function createNewWeekForLeague(leagueId) {
 }
 
 function initNewWeek(weekData, league) {
-  const weekNum = weekData.type === regOrPst.POSTSEASON ? 17 + weekData.week.sequence : weekData.week.sequence
+  const weekNum = weekData.type === regOrPst.POSTSEASON ? 18 + weekData.week.sequence : weekData.week.sequence
   let week = WeekModel({
     weekId: weekData.week.id,
     number: weekNum,
@@ -270,9 +284,9 @@ async function evaluateWeek() {
     currentSeason.standings.forEach(standing => {
       standing.score += resultObject[standing.id];
     })
-    if (isThisSuperBowlWeek) {
-      currentSeason.isOpen = false;
-    }
+    // if (isThisSuperBowlWeek) {
+    //   currentSeason.isOpen = false;
+    // }
   })
 
   if (await DbTransactions.saveSeasonModifications(leagues)) {
@@ -282,12 +296,13 @@ async function evaluateWeek() {
   }
 }
 
-async function evaluate() {
+async function evaluate(isAdmin) {
   const leagues = await LeagueDoc.getAllLeagues();
-  if (!leagues) {
-    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
-  }
-  if (leagues === responseMessage.DATABASE.ERROR) {
+  if (
+    !leagues ||
+    leagues === responseMessage.DATABASE.ERROR ||
+    !isAdmin
+  ) {
     return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
   }
   const weekResults = await getWeekData();
@@ -305,6 +320,7 @@ async function evaluate() {
     const currentSeason = league.seasons.find(season => season.year === weekResults.year);
     const currWeek = currentSeason.weeks.find(week => week.weekId === weekResults.week.id);
     const doWeekResults = doWeek(currWeek.games, weekResults.week.games, resultObject);
+    currWeek.isOpen = false;
     currentSeason.standings.forEach(standing => {
       standing.score += doWeekResults[standing.id];
     })
@@ -312,8 +328,7 @@ async function evaluate() {
       isWeekOver = true;
       currWeek.isOpen = false;
       if (isThisSuperBowlWeek) {
-        currentSeason.isOpen = false;
-        checkFinalWinnerBets(currentSeason. getSuperbowlWinner(weekResults.week.games[0]))
+        checkFinalWinnerBets(currentSeason, getSuperbowlWinner(weekResults.week.games[0]));
       }
     }
   });
@@ -433,7 +448,7 @@ async function stepWeekTracker() {
     return;
   }
 
-  if (weekTracker.regOrPst === regOrPst.REGULAR && weekTracker.week === 17) {
+  if (weekTracker.regOrPst === regOrPst.REGULAR && weekTracker.week === 18) {
     weekTracker.week = 1;
     weekTracker.regOrPst = regOrPst.POSTSEASON;
   } else {
@@ -500,5 +515,5 @@ async function resetWeekTrackerForNextYear() {
   weekTracker.regOrPst = regOrPst.REGULAR;
   weekTracker.week = 1;
 
-  return await DbTransactions.saveWeekTrackerModifications(weekTracker);
+  return weekTracker;
 }
