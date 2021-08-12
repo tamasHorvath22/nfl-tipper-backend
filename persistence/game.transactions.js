@@ -3,13 +3,14 @@ const schemas = require('../common/constants/schemas');
 
 
 module.exports = {
-  saveNewSeason: saveNewSeason,
+  saveNewSeasonAndWeektracker: saveNewSeasonAndWeektracker,
   saveSeasonModifications: saveSeasonModifications,
   saveWeekTrackerModifications: saveWeekTrackerModifications
 }
 
-async function saveNewSeason(leagues) {
+async function saveNewSeasonAndWeektracker(leagues, weektracker) {
   const transaction = new Transaction(true);
+  transaction.insert(schemas.WEEK_TRACKER, weektracker);
   
   leagues.forEach(league => {
     league.markModified('seasons');

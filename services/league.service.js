@@ -19,7 +19,8 @@ module.exports = {
   saveWeekBets: saveWeekBets,
   triggerManually: triggerManually,
   createNewSeason: createNewSeason,
-  modifyLeague: modifyLeague
+  modifyLeague: modifyLeague,
+  saveFinalWinner: saveFinalWinner
 }
 
 async function createLeague(creator, leagueData) {
@@ -34,12 +35,10 @@ async function createLeague(creator, leagueData) {
     return responseMessage.USER.NOT_FOUND;
   }
 
-  const weekTracker = await WeekTrackerDoc.getTracker();
-  if (!weekTracker) {
-    return responseMessage.DATABASE.ERROR;
+  const league = await buildLeague(user, leagueData);
+  if (league === responseMessage.LEAGUE.CREATE_FAIL) {
+    return responseMessage.LEAGUE.CREATE_FAIL;
   }
-
-  const league = buildLeague(user, leagueData, weekTracker.year);
   user.leagues.push({ leagueId: league._id, name: league.name });
 
   let isLeagueSaveSuccess = await DbTransactions.saveLeagueAndUser(user, league);
@@ -50,7 +49,12 @@ async function createLeague(creator, leagueData) {
   return user;
 }
 
-function buildLeague(user, leagueData, currentYear) {
+async function buildLeague(user, leagueData) {
+  const weekTracker = await WeekTrackerDoc.getTracker();
+  if (!weekTracker) {
+    return responseMessage.LEAGUE.CREATE_FAIL;
+  }
+  let currentYear = weekTracker.year;
   // if (process.env.ENVIRONMENT === environment.DEVELOP) {
   //   currentYear--;
   // }
@@ -66,6 +70,9 @@ function buildLeague(user, leagueData, currentYear) {
         numberOfSuperBowl: currentYear - 1965,
         weeks: [],
         standings: [{ id: user._id, name: user.username, score: 0 }],
+        finalWinner: {
+          [user._id]: null
+        },
         isOpen: true
       })
     ],
@@ -217,9 +224,14 @@ function saveBetsForOneLeague(userId, league, incomingWeek, currentYear) {
   const currentTime = new Date().getTime();
 
   currentWeek.games.forEach(game => {
+    
+    // TODO put saveBets inside this if
     if (new Date(game.startTime).getTime() > currentTime) {
       setBets(userId, game, incomingWeek);
     }
+    // TODO remove this in production
+    setBets(userId, game, incomingWeek);
+    
     // if (process.env.ENVIRONMENT === environment.DEVELOP) {
     //   setBets(userId, game, incomingWeek);
     // } else {
@@ -257,10 +269,26 @@ async function modifyLeague(userId, leagueId, avatarUrl, leagueName) {
   return isSaveSuccess ? responseMessage.LEAGUE.UPDATE_SUCCESS : responseMessage.LEAGUE.UPDATE_FAIL;
 };
 
+async function saveFinalWinner(userId, leagueId, finalWinner) {
+  const league = await LeagueDoc.getLeagueById(leagueId);
+  if (!league) {
+    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+  }
+  // TODO set frontend for return value
+  if (league === responseMessage.DATABASE.ERROR) {
+    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
+  }
+  const currentSeason = league.seasons.find(season => season.isOpen);
+  currentSeason.finalWinner[userId] = finalWinner;
+
+  const isSaveSuccess = await DbTransactions.updateLeagues([league]);
+  return isSaveSuccess ? responseMessage.LEAGUE.UPDATE_SUCCESS : responseMessage.LEAGUE.UPDATE_FAIL;
+};
+
 async function triggerManually() {
   return await ScheduleService.triggerManually();
 }
 
-async function createNewSeason() {
-  return await GameService.createNewSeason();
+async function createNewSeason(isAdmin) {
+  return await GameService.createNewSeason(isAdmin);
 }

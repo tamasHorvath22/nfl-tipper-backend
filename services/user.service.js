@@ -146,7 +146,6 @@ async function checkPassToken(hash) {
 
 async function confirmEmail(hash) {
   const emailConfirm = await UserDoc.getEmailConfirmById(hash);
-  console.log(emailConfirm);
   if (!emailConfirm || emailConfirm === responseMessage.DATABASE.ERROR) {
     return responseMessage.USER.NO_EMAIL_HASH_FOUND;
   }

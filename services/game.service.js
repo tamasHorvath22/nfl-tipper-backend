@@ -12,6 +12,7 @@ const regOrPst = require('../common/constants/regular-or-postseason');
 const DbTransactions = require('../persistence/game.transactions');
 const responseMessage = require('../common/constants/api-response-messages');
 const sleep = require('util').promisify(setTimeout);
+const BetTypes = require('../common/constants/bet.types');
 
 
 module.exports = {
@@ -42,17 +43,25 @@ async function getWeekData() {
   }
 }
 
-async function createNewSeason() {
+async function createNewSeason(isAdmin) {
+  const weekTracker = await WeekTrackerDoc.getTracker();
+  if (
+    !isAdmin ||
+    !weekTracker ||
+    weekTracker.regOrPst === regOrPst.REGULAR ||
+    weekTracker.week !== 4
+  ) {
+    // TODO frontend
+    return responseMessage.DATABASE.ERROR;
+  }
+
   const resetWeekTrackerResult = await resetWeekTrackerForNextYear();
   if (!resetWeekTrackerResult) {
     console.log('Before new season creation, week tracker reset failed.');
     return responseMessage.SEASON.CREATE_FAIL;
   }
   const leagues = await LeagueDoc.getAllLeagues();
-  if (!leagues) {
-    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
-  }
-  if (leagues === responseMessage.DATABASE.ERROR) {
+  if (!leagues || leagues === responseMessage.DATABASE.ERROR) {
     return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
   }
   const currentYear = new Date().getFullYear();
@@ -60,22 +69,29 @@ async function createNewSeason() {
     if (league.seasons.find(season => season.year === currentYear)) {
       return;
     }
-    standingsInit = [];
+    const prevSeason = league.seasons.find(season => season.year === currentYear - 1);
+    if (prevSeason) {
+      prevSeason.isOpen = false;
+    }
+    const finalWinnerObj = {};
     league.players.forEach(player => {
-      standingsInit.push({ id: player.id, name: player.name, score: 0 })
-    })
+      finalWinnerObj[player.id] = null;
+    });
+
     const newSeason = SeasonModel({
       year: currentYear,
       numberOfSeason: currentYear - 1919,
       numberOfSuperBowl: currentYear - 1965,
       weeks: [],
-      standings: standingsInit,
+      standings: league.players.map(player => {
+        return { id: player.id, name: player.name, score: 0 }
+      }),
+      finalWinner: finalWinnerObj,
       isOpen: true
     })
-    // league.seasons[league.seasons.length - 1].isOpen = false;
     league.seasons.push(newSeason);
   })
-  if (await DbTransactions.saveNewSeason(leagues)) {
+  if (await DbTransactions.saveNewSeasonAndWeektracker(leagues, resetWeekTrackerResult)) {
     await createNewWeekAndGames();
     return responseMessage.SEASON.CREATE_SUCCESS;
   }
@@ -127,7 +143,7 @@ async function createNewWeekForLeague(leagueId) {
 }
 
 function initNewWeek(weekData, league) {
-  const weekNum = weekData.type === regOrPst.POSTSEASON ? 17 + weekData.week.sequence : weekData.week.sequence
+  const weekNum = weekData.type === regOrPst.POSTSEASON ? 18 + weekData.week.sequence : weekData.week.sequence
   let week = WeekModel({
     weekId: weekData.week.id,
     number: weekNum,
@@ -148,6 +164,7 @@ function initNewWeek(weekData, league) {
       isOpen: true,
       winner: null,
       winnerTeamAlias: null,
+      winnerValue: null,
       bets: []
     })
     league.players.forEach(player => {
@@ -215,27 +232,61 @@ async function evaluateWeek() {
       gameToEvaluate.status = gameResult.status;
       gameToEvaluate.homeScore = scoring.home_points;
       gameToEvaluate.awayScore = scoring.away_points;
-      if (gameToEvaluate.homeScore > gameToEvaluate.awayScore) {
+
+      const pointDiff = gameToEvaluate.homeScore - gameToEvaluate.awayScore;
+
+      if (pointDiff === 0) {
+        gameToEvaluate.winner = winnerTeam.TIE;
+        gameToEvaluate.winnerValue = BetTypes.TIE;
+      } else if (pointDiff <= -15) {
+        gameToEvaluate.winnerValue = BetTypes.AWAY_15_PLUS;
+      } else if (pointDiff <= -8) {
+        gameToEvaluate.winnerValue = BetTypes.AWAY_8_14;
+      } else if (pointDiff <= -4) {
+        gameToEvaluate.winnerValue = BetTypes.AWAY_4_7;
+      } else if (pointDiff <= -1) {
+        gameToEvaluate.winnerValue = BetTypes.AWAY_0_3;
+      } else if (pointDiff <= 3) {
+        gameToEvaluate.winnerValue = BetTypes.HOME_0_3;
+      } else if (pointDiff <= 7) {
+        gameToEvaluate.winnerValue = BetTypes.HOME_4_7;
+      } else if (pointDiff <= 14) {
+        gameToEvaluate.winnerValue = BetTypes.HOME_8_14;
+      } else if (pointDiff >= 15) {
+        gameToEvaluate.winnerValue = BetTypes.HOME_15_PLUS;
+      }
+
+      if (pointDiff > 0) {
         gameToEvaluate.winner = winnerTeam.HOME;
         gameToEvaluate.winnerTeamAlias = gameToEvaluate.homeTeamAlias;
-      } else if (gameToEvaluate.homeScore < gameToEvaluate.awayScore) {
+      } else if (pointDiff < 0) {
         gameToEvaluate.winner = winnerTeam.AWAY;
         gameToEvaluate.winnerTeamAlias = gameToEvaluate.awayTeamAlias;
-      } else {
-        gameToEvaluate.winner = winnerTeam.TIE;
       }
       gameToEvaluate.bets.forEach(bet => {
-        if (bet.bet === gameToEvaluate.winner) {
-          resultObject[bet.id]++;
+        if (!bet.bet) {
+          return;
+        }
+        if (gameToEvaluate.winnerValue === BetTypes.TIE) {
+          if (bet.bet === BetTypes.HOME_0_3 || bet.bet === BetTypes.AWAY_0_3) {
+            resultObject[bet.id] += 5;
+          }
+        } else {
+          if (bet.bet === gameToEvaluate.winnerValue) {
+            resultObject[bet.id] += 5;
+          } else if (bet.bet.startsWith(gameToEvaluate.winnerValue.subString(0, 4))) {
+            resultObject[bet.id] += 1;
+          }
         }
       })
+
     })
     currentSeason.standings.forEach(standing => {
       standing.score += resultObject[standing.id];
     })
-    if (isThisSuperBowlWeek) {
-      currentSeason.isOpen = false;
-    }
+    // if (isThisSuperBowlWeek) {
+    //   currentSeason.isOpen = false;
+    // }
   })
 
   if (await DbTransactions.saveSeasonModifications(leagues)) {
@@ -245,12 +296,13 @@ async function evaluateWeek() {
   }
 }
 
-async function evaluate() {
+async function evaluate(isAdmin) {
   const leagues = await LeagueDoc.getAllLeagues();
-  if (!leagues) {
-    return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
-  }
-  if (leagues === responseMessage.DATABASE.ERROR) {
+  if (
+    !leagues ||
+    leagues === responseMessage.DATABASE.ERROR ||
+    !isAdmin
+  ) {
     return responseMessage.LEAGUE.LEAGUES_NOT_FOUND;
   }
   const weekResults = await getWeekData();
@@ -268,6 +320,7 @@ async function evaluate() {
     const currentSeason = league.seasons.find(season => season.year === weekResults.year);
     const currWeek = currentSeason.weeks.find(week => week.weekId === weekResults.week.id);
     const doWeekResults = doWeek(currWeek.games, weekResults.week.games, resultObject);
+    currWeek.isOpen = false;
     currentSeason.standings.forEach(standing => {
       standing.score += doWeekResults[standing.id];
     })
@@ -275,7 +328,7 @@ async function evaluate() {
       isWeekOver = true;
       currWeek.isOpen = false;
       if (isThisSuperBowlWeek) {
-        currentSeason.isOpen = false;
+        checkFinalWinnerBets(currentSeason, getSuperbowlWinner(weekResults.week.games[0]));
       }
     }
   });
@@ -297,6 +350,20 @@ async function evaluate() {
   }
 }
 
+function getSuperbowlWinner (game) {
+  const winner = game.scoring.home_points > game.scoring.away_points ? 'home' : 'away';
+  return game[winner].alias;
+}
+
+function checkFinalWinnerBets(season, winner) {
+  Object.keys(season.finalWinner).forEach(userId => {
+    if (season.finalWinner[userId] === winner) {
+      // TODO define points
+      season.standings.find(s => s.id === userId).score += 50;
+    }
+  })
+}
+
 function doWeek(leagueGames, gamesResults, resultObject) {
   gamesResults.forEach(gameResult => {
     if (!(gameResult.status === gameStatus.CLOSED || gameResult.status === gameStatus.POSTPONED)) {
@@ -314,21 +381,55 @@ function doWeek(leagueGames, gamesResults, resultObject) {
     gameToEvaluate.status = gameResult.status;
     gameToEvaluate.homeScore = scoring.home_points;
     gameToEvaluate.awayScore = scoring.away_points;
-    if (gameToEvaluate.homeScore > gameToEvaluate.awayScore) {
+    
+    const pointDiff = gameToEvaluate.homeScore - gameToEvaluate.awayScore;
+
+    if (pointDiff === 0) {
+      gameToEvaluate.winner = winnerTeam.TIE;
+      gameToEvaluate.winnerValue = BetTypes.TIE;
+    } else if (pointDiff <= -15) {
+      gameToEvaluate.winnerValue = BetTypes.AWAY_15_PLUS;
+    } else if (pointDiff <= -8) {
+      gameToEvaluate.winnerValue = BetTypes.AWAY_8_14;
+    } else if (pointDiff <= -4) {
+      gameToEvaluate.winnerValue = BetTypes.AWAY_4_7;
+    } else if (pointDiff <= -1) {
+      gameToEvaluate.winnerValue = BetTypes.AWAY_0_3;
+    } else if (pointDiff <= 3) {
+      gameToEvaluate.winnerValue = BetTypes.HOME_0_3;
+    } else if (pointDiff <= 7) {
+      gameToEvaluate.winnerValue = BetTypes.HOME_4_7;
+    } else if (pointDiff <= 14) {
+      gameToEvaluate.winnerValue = BetTypes.HOME_8_14;
+    } else if (pointDiff >= 15) {
+      gameToEvaluate.winnerValue = BetTypes.HOME_15_PLUS;
+    }
+
+    if (pointDiff > 0) {
       gameToEvaluate.winner = winnerTeam.HOME;
       gameToEvaluate.winnerTeamAlias = gameToEvaluate.homeTeamAlias;
-    } else if (gameToEvaluate.homeScore < gameToEvaluate.awayScore) {
+    } else if (pointDiff < 0) {
       gameToEvaluate.winner = winnerTeam.AWAY;
       gameToEvaluate.winnerTeamAlias = gameToEvaluate.awayTeamAlias;
-    } else {
-      gameToEvaluate.winner = winnerTeam.TIE;
     }
-    gameToEvaluate.isOpen = false;
     gameToEvaluate.bets.forEach(bet => {
-      if (bet.bet === gameToEvaluate.winner) {
-        resultObject[bet.id]++;
+      if (!bet.bet) {
+        return;
+      }
+      if (gameToEvaluate.winnerValue === BetTypes.TIE) {
+        if (bet.bet === BetTypes.HOME_0_3 || bet.bet === BetTypes.AWAY_0_3) {
+          resultObject[bet.id] += 4;
+        }
+      } else {
+        if (bet.bet === gameToEvaluate.winnerValue) {
+          resultObject[bet.id] += 4;
+        } else if (bet.bet.startsWith(gameToEvaluate.winnerValue.substring(0, 4))) {
+          resultObject[bet.id] += 1;
+        }
       }
     })
+
+    gameToEvaluate.isOpen = false;
   })
   return resultObject;
 }
@@ -347,7 +448,7 @@ async function stepWeekTracker() {
     return;
   }
 
-  if (weekTracker.regOrPst === regOrPst.REGULAR && weekTracker.week === 17) {
+  if (weekTracker.regOrPst === regOrPst.REGULAR && weekTracker.week === 18) {
     weekTracker.week = 1;
     weekTracker.regOrPst = regOrPst.POSTSEASON;
   } else {
@@ -414,5 +515,5 @@ async function resetWeekTrackerForNextYear() {
   weekTracker.regOrPst = regOrPst.REGULAR;
   weekTracker.week = 1;
 
-  return await DbTransactions.saveWeekTrackerModifications(weekTracker);
+  return weekTracker;
 }
