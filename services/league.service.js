@@ -58,7 +58,6 @@ async function buildLeague(user, leagueData) {
   // if (process.env.ENVIRONMENT === environment.DEVELOP) {
   //   currentYear--;
   // }
-
   return League({
     name: leagueData.name,
     creator: user._id,
@@ -86,8 +85,8 @@ async function getLeagueNames(idList) {
   return await LeagueDoc.getLeagueNames(idList);
 }
 
-async function getLeague(id) {
-  const league = await LeagueDoc.getLeagueById(id);
+async function getLeague(leagueId, userId) {
+  const league = await LeagueDoc.getLeagueById(leagueId);
   if (!league) {
     return responseMessage.LEAGUE.NOT_FOUND;
   }
@@ -95,6 +94,12 @@ async function getLeague(id) {
   if (league === responseMessage.DATABASE.ERROR) {
     return responseMessage.LEAGUE.NOT_FOUND;
   }
+  const currentSeason = league.seasons.find(season => season.isOpen);
+  const currentWeek = currentSeason.weeks.find(week => week.isOpen);
+  currentWeek.games.forEach(game => {
+    const onlyUser = game.bets.filter(bet => bet.id.equals(userId));
+    game.bets = onlyUser;
+  })
   return league;
 }
 
