@@ -51,7 +51,6 @@ async function createNewSeason(isAdmin) {
     weekTracker.regOrPst === regOrPst.REGULAR ||
     weekTracker.week !== 4
   ) {
-    // TODO frontend
     return responseMessage.DATABASE.ERROR;
   }
 

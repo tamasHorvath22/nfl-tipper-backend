@@ -4,10 +4,8 @@ const responseMessage = require('../common/constants/api-response-messages');
 const UserDoc = require('../persistence/user.doc');
 const LeagueDoc = require('../persistence/league.doc');
 const GameService = require('./game.service');
-const mongoose = require('mongoose');
 const ScheduleService = require('./schedule.service');
 const DbTransactions = require('../persistence/league.transactions');
-const environment = require('../common/constants/environments');
 const WeekTrackerDoc = require('../persistence/weektracker.doc');
 
 module.exports = {
@@ -87,6 +85,10 @@ async function getLeagueNames(idList) {
 
 async function getLeague(leagueId, userId) {
   const league = await LeagueDoc.getLeagueById(leagueId);
+  const weekTracker = await WeekTrackerDoc.getTracker();
+  if (!weekTracker) {
+    return responseMessage.DATABASE.ERROR;
+  }
   if (!league) {
     return responseMessage.LEAGUE.NOT_FOUND;
   }
@@ -96,6 +98,12 @@ async function getLeague(leagueId, userId) {
   }
   const currentSeason = league.seasons.find(season => season.isOpen);
   const currentWeek = currentSeason.weeks.find(week => week.isOpen);
+  const firstGameStart = new Date(currentWeek.games.sort((a, b) => a.startTime > b.startTime ? 1 : -1)[0].startTime).getTime();
+  
+  if (weekTracker.week === 1 && new Date().getTime() < firstGameStart) {
+    currentSeason.finalWinner = { [userId]: currentSeason.finalWinner[userId] };
+  }
+  
   currentWeek.games.forEach(game => {
     const onlyUser = game.bets.filter(bet => bet.id.equals(userId));
     game.bets = onlyUser;
