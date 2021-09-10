@@ -15,7 +15,7 @@ module.exports = {
   sendInvitation: sendInvitation,
   acceptInvitaion: acceptInvitaion,
   saveWeekBets: saveWeekBets,
-  triggerManually: triggerManually,
+  // triggerManually: triggerManually,
   createNewSeason: createNewSeason,
   modifyLeague: modifyLeague,
   saveFinalWinner: saveFinalWinner
@@ -53,9 +53,6 @@ async function buildLeague(user, leagueData) {
     return responseMessage.LEAGUE.CREATE_FAIL;
   }
   let currentYear = weekTracker.year;
-  // if (process.env.ENVIRONMENT === environment.DEVELOP) {
-  //   currentYear--;
-  // }
   return League({
     name: leagueData.name,
     creator: user._id,
@@ -105,7 +102,7 @@ async function getLeague(leagueId, userId) {
   }
   
   currentWeek.games.forEach(game => {
-    const onlyUser = game.bets.filter(bet => bet.id.equals(userId));
+    const onlyUser = game.bets.filter(bet => bet.id.toString() === userId);
     game.bets = onlyUser;
   })
   return league;
@@ -224,29 +221,14 @@ async function saveWeekBets(userId, leagueId, incomingWeek, isForAllLeagues) {
 };
 
 function saveBetsForOneLeague(userId, league, incomingWeek, currentYear) {
-  // if (process.env.ENVIRONMENT === environment.DEVELOP) {
-  //   currentYear--;
-  // }
   const currentSeason = league.seasons.find(season => season.year === currentYear);
   const currentWeek = currentSeason.weeks.find(weekToFind => weekToFind.number === incomingWeek.number);
   const currentTime = new Date().getTime();
 
   currentWeek.games.forEach(game => {
-    
-    // TODO put saveBets inside this if
     if (new Date(game.startTime).getTime() > currentTime) {
       setBets(userId, game, incomingWeek);
     }
-    // TODO remove this in production
-    setBets(userId, game, incomingWeek);
-    
-    // if (process.env.ENVIRONMENT === environment.DEVELOP) {
-    //   setBets(userId, game, incomingWeek);
-    // } else {
-    //   if (new Date(game.startTime).getTime() > currentTime) {
-    //     setBets(userId, game, incomingWeek);
-    //   }
-    // }
   })
 }
 
@@ -293,9 +275,9 @@ async function saveFinalWinner(userId, leagueId, finalWinner) {
   return isSaveSuccess ? responseMessage.LEAGUE.UPDATE_SUCCESS : responseMessage.LEAGUE.UPDATE_FAIL;
 };
 
-async function triggerManually() {
-  return await ScheduleService.triggerManually();
-}
+// async function triggerManually() {
+//   return await ScheduleService.triggerManually();
+// }
 
 async function createNewSeason(isAdmin) {
   return await GameService.createNewSeason(isAdmin);

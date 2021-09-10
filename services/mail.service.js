@@ -2,7 +2,7 @@ const mailTemplates = require('../common/constants/email-templates');
 const Mailgun = require('mailgun-js');
 const getTemplate = require('../modules/templateModule');
 const responseMessage = require('../common/constants/api-response-messages');
-const mailgun = new Mailgun({ 
+const mailgun = new Mailgun({
     apiKey: process.env.MAILGUN_API_KEY,
     domain: process.env.MAILGUN_DOMAIN,
     host: process.env.MAILGUN_EU_HOST

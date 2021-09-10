@@ -319,12 +319,12 @@ async function evaluate(isAdmin) {
     const currentSeason = league.seasons.find(season => season.year === weekResults.year);
     const currWeek = currentSeason.weeks.find(week => week.weekId === weekResults.week.id);
     const doWeekResults = doWeek(currWeek.games, weekResults.week.games, resultObject);
-    currWeek.isOpen = false;
     currentSeason.standings.forEach(standing => {
       standing.score += doWeekResults[standing.id];
     })
-    if (doWeekResults.isWeekOver) {
-      isWeekOver = true;
+
+    isWeekOver = !currWeek.games.some(game => game.isOpen);
+    if (isWeekOver) {
       currWeek.isOpen = false;
       if (isThisSuperBowlWeek) {
         checkFinalWinnerBets(currentSeason, getSuperbowlWinner(weekResults.week.games[0]));
@@ -357,7 +357,6 @@ function getSuperbowlWinner (game) {
 function checkFinalWinnerBets(season, winner) {
   Object.keys(season.finalWinner).forEach(userId => {
     if (season.finalWinner[userId] === winner) {
-      // TODO define points
       season.standings.find(s => s.id === userId).score += 30;
     }
   })
