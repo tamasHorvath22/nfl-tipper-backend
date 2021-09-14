@@ -317,8 +317,8 @@ async function evaluate(isAdmin) {
       resultObject[player.id] = 0;
     })
     const currentSeason = league.seasons.find(season => season.year === weekResults.year);
-    console.log(week)
-    console.log(week.weekId)
+    console.log(currentSeason.weeks[0])
+    console.log(currentSeason.weeks[0].weekId)
     console.log(weekResults)
     console.log(weekResults.week)
     console.log(weekResults.week.id)
