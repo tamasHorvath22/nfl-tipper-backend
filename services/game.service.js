@@ -317,6 +317,11 @@ async function evaluate(isAdmin) {
       resultObject[player.id] = 0;
     })
     const currentSeason = league.seasons.find(season => season.year === weekResults.year);
+    console.log(week)
+    console.log(week.weekId)
+    console.log(weekResults)
+    console.log(weekResults.week)
+    console.log(weekResults.week.id)
     const currWeek = currentSeason.weeks.find(week => week.weekId === weekResults.week.id);
     const doWeekResults = doWeek(currWeek.games, weekResults.week.games, resultObject);
     currentSeason.standings.forEach(standing => {
@@ -331,6 +336,7 @@ async function evaluate(isAdmin) {
       }
     }
   });
+
   const isSaveSuccess = await DbTransactions.saveSeasonModifications(leagues);
   if (!isSaveSuccess) {
     return responseMessage.LEAGUE.UPDATE_FAIL;
@@ -338,12 +344,13 @@ async function evaluate(isAdmin) {
   await sleep(2000);
   await setTeamStandings();
 
+  console.log(isWeekOver)
   if (!isWeekOver) {
     return responseMessage.WEEK.EVALUATION_SUCCESS;
   }
   const isStepTrackerSuccess = await stepWeekTracker();
   if (isStepTrackerSuccess) {
-    await sleep(10000);
+    await sleep(2000);
     const isCreateSuccess = await createNewWeekAndGames();
     return isCreateSuccess ? responseMessage.WEEK.EVALUATION_SUCCESS : responseMessage.WEEK.EVALUATION_FAIL;
   }
