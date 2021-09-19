@@ -317,11 +317,6 @@ async function evaluate(isAdmin) {
       resultObject[player.id] = 0;
     })
     const currentSeason = league.seasons.find(season => season.year === weekResults.year);
-    console.log(currentSeason.weeks[0])
-    console.log(currentSeason.weeks[0].weekId)
-    console.log(weekResults)
-    console.log(weekResults.week)
-    console.log(weekResults.week.id)
     const currWeek = currentSeason.weeks.find(week => week.weekId === weekResults.week.id);
     const doWeekResults = doWeek(currWeek.games, weekResults.week.games, resultObject);
     currentSeason.standings.forEach(standing => {
@@ -344,7 +339,6 @@ async function evaluate(isAdmin) {
   await sleep(2000);
   await setTeamStandings();
 
-  console.log(isWeekOver)
   if (!isWeekOver) {
     return responseMessage.WEEK.EVALUATION_SUCCESS;
   }
@@ -463,7 +457,7 @@ async function stepWeekTracker() {
 }
 
 async function setTeamStandings() {
-  const path = `https://api.sportradar.us/nfl/official/trial/v5/en/seasons/2020/standings.json?api_key=${process.env.SPORTRADAR_KEY}`
+  const path = `https://api.sportradar.us/nfl/official/trial/v6/en/seasons/2021/REG/standings/season.json?api_key=${process.env.SPORTRADAR_KEY}`
   let data;
   try {
     data = await axios.get(path);
@@ -483,6 +477,7 @@ async function setTeamStandings() {
     });
   } else {
     newStandings = savedStandings[0];
+    newStandings.teams = {};
   }
 
   data.data.conferences.forEach(conf => {
